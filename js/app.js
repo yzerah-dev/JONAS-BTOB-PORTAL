@@ -54,9 +54,9 @@
    * - camion   : uniquement au camion complet (MOQ 1 camion), produits éligibles seulement.
    */
   const MODES = {
-    standard: { titre: 'Colis & palette', sous: 'Commande libre' },
-    tradepal: { titre: 'Trade Pal', sous: 'Palette uniquement' },
-    camion: { titre: 'Camion complet', sous: 'MOQ 1 camion' }
+    standard: { titre: 'Standard', sous: 'Colis & palette' },
+    tradepal: { titre: 'Trade Pal', sous: 'À la palette' },
+    camion: { titre: 'Trade Truck', sous: 'Camion complet' }
   };
   let modeAchat = 'standard';
   let minuterieCarrousel = null;
@@ -237,7 +237,7 @@
             </div>` : `
             <div class="buy__block buy__block--camion">
               <div class="buy__head">
-                <span class="buy__qty" title="Camion complet">${ICONES.camion}<span>${palettesCamion(p)} <small>pal.</small> · ${pieces(piecesCamion(p))} <small>pces</small></span></span>
+                <span class="buy__qty" title="Trade Truck — camion complet">${ICONES.camion}<span>${palettesCamion(p)} <small>pal.</small> · ${pieces(piecesCamion(p))} <small>pces</small></span></span>
                 <span class="buy__price">${prix(p.prixCamion)}<small>/pce</small></span>
               </div>
               <span class="sr-only">Camion complet de ${palettesCamion(p)} palettes, ${pieces(piecesCamion(p))} pièces</span>
@@ -392,7 +392,7 @@
       <div class="modes" role="radiogroup" aria-label="Mode d'achat">
         ${Object.entries(MODES).map(([id, m]) => `
           <button type="button" role="radio" class="mode" data-mode="${id}" aria-checked="${id === modeAchat}">
-            <strong>${esc(m.titre)}</strong><small>${id === 'camion' ? `MOQ 1 camion · ${CONFIG.palettesParCamion} pal.` : esc(m.sous)}</small>
+            <strong>${esc(m.titre)}</strong><small>${id === 'camion' ? `MOQ camion · ${CONFIG.palettesParCamion} pal.` : esc(m.sous)}</small>
           </button>`).join('')}
       </div>`;
   }
@@ -473,12 +473,6 @@
             <span class="action__sub">Références → panier</span>
           </a>
         </div>
-
-        <!-- Mode d'achat -->
-        <section class="mode-section" aria-labelledby="mode-titre">
-          <h2 id="mode-titre" class="mode-section__title">Comment achetez-vous ?</h2>
-          ${selecteurMode()}
-        </section>
 
         <!-- Points de confiance -->
         <ul class="trust">
@@ -585,7 +579,6 @@
     app.innerHTML = `
       <div class="container">
         ${o.bandeau}
-        ${selecteurMode()}
         <p class="mode-note" id="mode-note" hidden></p>
         <div class="toolbar">
           ${o.sousCategories.length ? `<div class="chips" role="group" aria-label="Sous-catégories">
@@ -607,7 +600,7 @@
       note.hidden = modeAchat === 'standard';
       note.textContent = modeAchat === 'tradepal'
         ? 'Trade Pal : achat à la palette uniquement. Produits en rupture palette masqués.'
-        : `Camion complet : ${CONFIG.palettesParCamion} palettes d'un même produit. Seuls les produits éligibles sont affichés.`;
+        : `Trade Truck : camion complet de ${CONFIG.palettesParCamion} palettes d'un même produit. Seuls les produits éligibles sont affichés.`;
       if (TRIS[tri].fn) liste = [...liste].sort(TRIS[tri].fn);
       $('#count').textContent = `${liste.length} produit${liste.length > 1 ? 's' : ''}`;
       $('#grid').innerHTML = liste.length
@@ -980,10 +973,14 @@
   function initEvenements() {
     // Boutons − / + des cartes (délégation)
     app.addEventListener('click', e => {
-      const m = e.target.closest('button[data-mode]');
-      if (m) return changerMode(m.dataset.mode);
       const b = e.target.closest('button[data-step]');
       if (b && !b.disabled) changerQuantite(b.dataset.ref, b.dataset.type, +b.dataset.step);
+    });
+
+    // Modes d'achat (en-tête et barre compacte)
+    document.addEventListener('click', e => {
+      const m = e.target.closest('button[data-mode]');
+      if (m) changerMode(m.dataset.mode);
     });
 
     // Recherche
@@ -1050,6 +1047,10 @@
       return;
     }
     produitsParRef = new Map(data.produits.map(p => [p.ref, p]));
+
+    // Sélecteur de mode d'achat, en haut de toutes les pages (en-tête + barre compacte)
+    document.querySelectorAll('[data-modes]').forEach(el => { el.innerHTML = selecteurMode(); });
+    document.body.dataset.mode = modeAchat;
 
     // Menu des rayons
     $('#rayons-nav').innerHTML = data.rayons

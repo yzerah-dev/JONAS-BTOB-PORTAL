@@ -85,6 +85,7 @@ svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2
   grid-template-columns: 1fr auto;
   grid-template-areas:
     "logo icons"
+    "modes modes"
     "search search"
     "actions actions";
   gap: 12px;
@@ -129,12 +130,29 @@ svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2
 @media (min-width: 1024px) {
   .header__inner {
     grid-template-columns: auto 1fr auto auto;
-    grid-template-areas: "logo search actions icons";
+    grid-template-areas:
+      "logo search actions icons"
+      "modes modes modes modes";
     gap: 20px; padding-top: 16px; padding-bottom: 16px;
   }
   .header__logo img { width: 170px; }
   .header__actions { display: flex; }
   .header__actions .btn { padding: 0 20px; }
+}
+
+/* Mode d'achat dans l'en-tête */
+.header__modes { grid-area: modes; }
+.header__modes .modes { margin-top: 0; }
+.minibar__modes { display: none; }
+@media (min-width: 1024px) {
+  .header__modes .modes, .minibar__modes .modes { display: flex; gap: 6px; max-width: none; }
+  .header__modes .mode, .minibar__modes .mode {
+    min-height: 40px; padding: 0 16px; border-radius: 999px; flex-direction: row; align-items: center; gap: 8px;
+  }
+  .header__modes .mode strong, .minibar__modes .mode strong { font-size: 14px; }
+  .header__modes .mode small, .minibar__modes .mode small { font-size: 12px; }
+  .minibar__modes { display: block; margin-left: auto; }
+  .minibar__modes .mode small { display: none; }
 }
 
 /* ---------- 3. Menu des rayons ---------- */
@@ -541,7 +559,7 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
 /* ---------- Sélecteur de mode d'achat ---------- */
 .modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
 .mode {
-  min-height: 60px; padding: 8px 10px; border-radius: 16px; border: 1.5px solid var(--bordure);
+  min-height: 52px; padding: 6px 10px; border-radius: 16px; border: 1.5px solid var(--bordure);
   background: var(--blanc); text-align: left; display: flex; flex-direction: column; justify-content: center; gap: 2px;
 }
 .mode strong { font-size: 14px; font-weight: 900; line-height: 1.15; }
@@ -551,9 +569,6 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
 .mode[aria-checked="true"] small { color: rgba(255,255,255,.75); }
 .mode[data-mode="camion"][aria-checked="true"] { background: var(--jaune); border-color: var(--jaune); color: var(--noir); }
 .mode[data-mode="camion"][aria-checked="true"] small { color: var(--noir); }
-.mode-section { margin-top: 26px; }
-.mode-section__title { font-size: 20px; }
-.mode-section .modes { margin-top: 10px; }
 .mode-note { margin-top: 10px; font-size: 13.5px; font-weight: 600; color: var(--gris-texte); }
 @media (min-width: 720px) {
   .modes { gap: 12px; max-width: 760px; }

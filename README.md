@@ -40,11 +40,11 @@ N'importe quel hébergement de fichiers statiques convient (Netlify, OVH, serveu
 
 ## Modes d'achat
 
-Sélecteur sur l'accueil et en haut de chaque liste de produits :
+Sélecteur en haut de toutes les pages (dans l'en-tête, et dans la barre compacte au défilement sur ordinateur) :
 
-- **Colis & palette** : commande libre, cartes avec les deux blocs.
+- **Standard** : au colis ou à la palette, cartes avec les deux blocs.
 - **Trade Pal** : achat à la palette uniquement. Seul le bloc palette est affiché, et les produits en rupture palette sont masqués. Le panier montre le remplissage du camion (palettes / 33).
-- **Camion complet** (MOQ 1 camion) : seuls les produits `eligibleCamion: true` sont affichés. 1 camion = `palettesParCamion` palettes (33 par défaut, `CONFIG.palettesParCamion`) × pièces par palette, au prix `prixCamion`.
+- **Trade Truck** (camion complet, MOQ 1 camion) : seuls les produits `eligibleCamion: true` sont affichés. 1 camion = `palettesParCamion` palettes (33 par défaut, `CONFIG.palettesParCamion`) × pièces par palette, au prix `prixCamion`.
 
 Champs ajoutés dans `produits.json` : `eligibleCamion` (désigné par Jonas ; activé pour la démo sur 12385, MG076, 18885, JO095, JO094, JO098), `prixCamion` (grille tarifaire à fournir ; vide = « prix à confirmer »), `palettesParCamion` (facultatif).
 
