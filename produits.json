@@ -1,0 +1,37 @@
+{
+  "_info": "Catalogue Jonas International. Champs à null = donnée à compléter (affichée « X,XX € » / « X pces »). Prix en € HT par pièce. Le prix palette est calculé (prix colis × 0,95). Fichier destiné à être régénéré chaque soir à 20 h depuis l'ERP.",
+  "client": {
+    "civilite": "Monsieur",
+    "nom": "Zouar"
+  },
+  "rayons": [
+    { "id": "menage", "nom": "Ménage", "sousCategories": ["Tampons & éponges", "Microfibre", "Brosserie", "Vinaigres & nettoyants"] },
+    { "id": "maison", "nom": "Maison", "sousCategories": ["Linge", "Parfums de linge"] },
+    { "id": "cuisine", "nom": "Cuisine", "sousCategories": [] },
+    { "id": "beaute", "nom": "Beauté", "sousCategories": ["Soins cheveux", "Accessoires cheveux"] },
+    { "id": "textile", "nom": "Textile", "sousCategories": [] },
+    { "id": "bazar", "nom": "Bazar", "sousCategories": [] },
+    { "id": "bricolage", "nom": "Bricolage", "sousCategories": [] }
+  ],
+  "selections": {
+    "nouveautes": ["JO095", "MG073", "JCB015", "2752", "JO077"],
+    "imbattables": ["JO095", "JO094", "JO098", "18885"],
+    "top-ub": ["12385", "MG076", "18885", "2748"]
+  },
+  "produits": [
+    { "ref": "MG076", "designation": "Vinaigre ménager citron 1 L", "marque": "Les Secrets de Mamie Georgette", "rayon": "menage", "sousCategorie": "Vinaigres & nettoyants", "piecesColis": 12, "piecesPalette": 600, "ean": "3701571444435", "prixUnitaire": 0.70, "pvc": 1.49, "badge": "TOP", "paletteDisponible": true },
+    { "ref": "12385", "designation": "Tampons à récurer inox x4", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Tampons & éponges", "piecesColis": 48, "piecesPalette": 1152, "ean": "3257990109863", "prixUnitaire": 0.65, "pvc": null, "badge": "TOP", "paletteDisponible": true },
+    { "ref": "18885", "designation": "Housse balai microfibre élastique", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": 2400, "ean": "3303210014834", "prixUnitaire": 0.70, "pvc": null, "badge": "BEST", "paletteDisponible": true },
+    { "ref": "2748", "designation": "Lavettes microfibre 30x30 x2", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": null, "ean": null, "prixUnitaire": 0.50, "pvc": null, "badge": "BEST", "paletteDisponible": true },
+    { "ref": "2750", "designation": "Lavettes microfibre 30x30 x5", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": 1152, "ean": "3303210937485", "prixUnitaire": 0.65, "pvc": null, "badge": null, "paletteDisponible": false },
+    { "ref": "2752", "designation": "Serpillière microfibre 50x70", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": null, "ean": null, "prixUnitaire": 0.75, "pvc": null, "badge": "NEW", "paletteDisponible": true },
+    { "ref": "JO095", "designation": "Pelle + balayette", "marque": "Jardin d'Orient", "rayon": "menage", "sousCategorie": "Brosserie", "piecesColis": 24, "piecesPalette": 912, "ean": "3701571445562", "prixUnitaire": null, "pvc": null, "badge": "BEST", "paletteDisponible": true },
+    { "ref": "JO094", "designation": "Pinces à linge x12", "marque": "Jardin d'Orient", "rayon": "maison", "sousCategorie": "Linge", "piecesColis": 48, "piecesPalette": 2400, "ean": "3701571445555", "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true },
+    { "ref": "JO098", "designation": "Chiffons microfibre x2", "marque": "Jardin d'Orient", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": 4224, "ean": "3701571445593", "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true },
+    { "ref": "JO077", "designation": "Set 3 brosses", "marque": "Jardin d'Orient", "rayon": "menage", "sousCategorie": "Brosserie", "piecesColis": 24, "piecesPalette": 1200, "ean": "3701571445388", "prixUnitaire": null, "pvc": null, "badge": "NEW", "paletteDisponible": true },
+    { "ref": "MG073", "designation": "Lingettes nettoyantes x50", "marque": "Les Secrets de Mamie Georgette", "rayon": "menage", "sousCategorie": "Vinaigres & nettoyants", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true },
+    { "ref": "JO013", "designation": "Parfum de linge", "marque": "Jardin d'Orient", "rayon": "maison", "sousCategorie": "Parfums de linge", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true },
+    { "ref": "JCB015", "designation": "Masque cheveux Pro Couleur", "marque": "Biguine Paris", "rayon": "beaute", "sousCategorie": "Soins cheveux", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true },
+    { "ref": "JCB031", "designation": "Accessoire cheveux", "marque": "Biguine Paris", "rayon": "beaute", "sousCategorie": "Accessoires cheveux", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true }
+  ]
+}
