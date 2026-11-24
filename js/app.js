@@ -55,8 +55,9 @@
    */
   const MODES = {
     standard: { titre: 'Standard', sous: 'Colis & palette' },
-    tradepal: { titre: 'Trade Pal', sous: 'À la palette' },
-    camion: { titre: 'Trade Truck', sous: 'Camion complet' }
+    tradepal: { titre: 'Trade Pal', sous: 'Palette' },
+    camion: { titre: 'Trade Truck', sous: 'Camion' },
+    fob: { titre: 'FOB', sous: 'Conteneur' }
   };
   let modeAchat = 'standard';
   let minuterieCarrousel = null;
@@ -198,6 +199,7 @@
   }
 
   function carteProduit(p) {
+    const modeAchat = MODE_CARTE();
     const m = marge(p);
     const pPal = prixPalette(p);
     const ruptPalette = !p.paletteDisponible;
@@ -392,24 +394,37 @@
       <div class="modes" role="radiogroup" aria-label="Mode d'achat">
         ${Object.entries(MODES).map(([id, m]) => `
           <button type="button" role="radio" class="mode" data-mode="${id}" aria-checked="${id === modeAchat}">
-            <strong>${esc(m.titre)}</strong><small>${id === 'camion' ? `MOQ camion · ${CONFIG.palettesParCamion} pal.` : esc(m.sous)}</small>
+            <strong>${esc(m.titre)}</strong><small>${esc(m.sous)}</small>
           </button>`).join('')}
       </div>`;
   }
 
-  function changerMode(id) {
-    if (!MODES[id] || id === modeAchat) return;
+  /** Applique un mode d'achat (boutons de l'en-tête, attribut du body). */
+  function appliquerMode(id) {
     modeAchat = id;
     document.body.dataset.mode = id;
     document.querySelectorAll('.mode').forEach(b => b.setAttribute('aria-checked', b.dataset.mode === id ? 'true' : 'false'));
-    if (rerendreListe) rerendreListe();
-    toast(`Mode ${MODES[id].titre}`);
   }
+
+  function changerMode(id) {
+    if (!MODES[id] || id === modeAchat) return;
+    const etaitFob = modeAchat === 'fob';
+    appliquerMode(id);
+    toast(`Mode ${MODES[id].titre}`);
+    // FOB a sa propre page ; en quittant FOB depuis cette page, on revient au catalogue
+    if (id === 'fob') { location.hash = '#/fob'; return; }
+    if (etaitFob && location.hash.startsWith('#/fob')) { location.hash = '#/catalogue'; return; }
+    if (rerendreListe) rerendreListe();
+  }
+
+  /** Mode utilisé pour dessiner une carte du catalogue courant (FOB n'en a pas : affichage standard). */
+  function MODE_CARTE() { return modeAchat === 'fob' ? 'standard' : modeAchat; }
 
   /** Produits visibles selon le mode d'achat. */
   function filtrerParMode(liste) {
     if (modeAchat === 'tradepal') return liste.filter(p => p.paletteDisponible);
     if (modeAchat === 'camion') return liste.filter(p => p.eligibleCamion);
+    if (modeAchat === 'fob') return []; // l'offre FOB est une sélection à part (page #/fob)
     return liste;
   }
 
@@ -597,7 +612,7 @@
     const rendre = () => {
       let liste = filtrerParMode(o.produits).filter(p => sc === 'Tout' || p.sousCategorie === sc);
       const note = $('#mode-note');
-      note.hidden = modeAchat === 'standard';
+      note.hidden = modeAchat === 'standard' || modeAchat === 'fob';
       note.textContent = modeAchat === 'tradepal'
         ? 'Trade Pal : achat à la palette uniquement. Produits en rupture palette masqués.'
         : `Trade Truck : camion complet de ${CONFIG.palettesParCamion} palettes d'un même produit. Seuls les produits éligibles sont affichés.`;
@@ -605,7 +620,9 @@
       $('#count').textContent = `${liste.length} produit${liste.length > 1 ? 's' : ''}`;
       $('#grid').innerHTML = liste.length
         ? `<div class="grid">${liste.map(carteProduit).join('')}</div>`
-        : `<div class="empty"><strong>${modeAchat === 'camion' && o.produits.length ? 'Aucun produit éligible au camion complet ici' : (o.vide || 'Aucun produit pour le moment')}</strong>Votre commercial peut vous renseigner sur les prochains arrivages.</div>`;
+        : modeAchat === 'fob'
+          ? `<div class="empty"><strong>Ces produits ne sont pas proposés en FOB</strong>L'offre FOB est une sélection à part, au départ du port.<br><a href="#/fob" class="btn btn--black" style="margin-top:14px">Voir l'offre FOB</a></div>`
+          : `<div class="empty"><strong>${modeAchat === 'camion' && o.produits.length ? 'Aucun produit éligible au camion complet ici' : (o.vide || 'Aucun produit pour le moment')}</strong>Votre commercial peut vous renseigner sur les prochains arrivages.</div>`;
     };
     rerendreListe = rendre;
 
@@ -692,6 +709,178 @@
       sousCategories: [],
       vide: 'Les produits de cette marque arrivent bientôt'
     });
+  }
+
+  /* =========================================================
+     Offre FOB
+     Sélection hors offre courante, prix FOB en dollars au départ
+     du port. MOQ = 1 conteneur complet par port : le client
+     remplit un conteneur (20', 40' ou 40' HC) au m³.
+     ========================================================= */
+  const fmtUsd = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'USD' });
+  const prixUsd = n => n == null ? 'X,XX $US' : fmtUsd.format(n);
+  const fmtM3 = n => n.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' m³';
+
+  // Un conteneur en préparation par port : { type, lignes: Map(ref → nb cartons) }
+  const fob = { port: null, conteneurs: new Map() };
+
+  const fobProduit = ref => data.fob.produits.find(p => p.ref === ref);
+  const typeConteneur = id => data.fob.conteneurs.find(c => c.id === id);
+
+  function conteneurDuPort(port) {
+    if (!fob.conteneurs.has(port)) fob.conteneurs.set(port, { type: data.fob.conteneurs[data.fob.conteneurs.length - 1].id, lignes: new Map() });
+    return fob.conteneurs.get(port);
+  }
+
+  /** Volume (m³), montant ($) et taux de remplissage d'un conteneur. */
+  function bilanConteneur(port) {
+    const c = conteneurDuPort(port);
+    let volume = 0, montant = 0, cartons = 0;
+    for (const [ref, n] of c.lignes) {
+      const p = fobProduit(ref);
+      volume += n * p.volumeCarton;
+      cartons += n;
+      if (p.prixFob != null) montant += n * p.piecesCarton * p.prixFob;
+    }
+    const capacite = typeConteneur(c.type).volumeUtile;
+    return { c, volume, montant, cartons, capacite, taux: volume / capacite, complet: volume / capacite >= data.fob.remplissageMin };
+  }
+
+  /** Ajoute ou retire des cartons, sans dépasser le volume du conteneur. */
+  function changerCartons(ref, delta) {
+    const p = fobProduit(ref);
+    const { c, volume, capacite } = bilanConteneur(p.port);
+    const actuel = c.lignes.get(ref) || 0;
+    if (delta > 0) {
+      const place = Math.floor((capacite - volume + 1e-9) / p.volumeCarton);
+      if (place <= 0) { toast('Conteneur plein'); return; }
+      if (delta > place) { delta = place; toast(`Conteneur complété : ${place} cartons ajoutés`); }
+    }
+    const n = Math.max(0, actuel + delta);
+    if (n === 0) c.lignes.delete(ref); else c.lignes.set(ref, n);
+    if (delta > 0 && n > actuel && !document.getElementById('toast').classList.contains('is-visible')) toast(`${n} cartons · ${p.designation}`);
+    rendreFob();
+  }
+
+  function carteFob(p) {
+    const n = conteneurDuPort(p.port).lignes.get(p.ref) || 0;
+    const port = data.fob.ports.find(x => x.id === p.port);
+    const pas = data.fob.pasCartons;
+    return `
+      <article class="card card--fob">
+        <div class="card__photo card__photo--fob">
+          ${p.exemple ? '<span class="badge badge--EX">EXEMPLE</span>' : ''}
+          ${p.photo
+            ? `<img src="${esc(p.photo)}" alt="${esc(p.designation)}" loading="lazy">`
+            : `<div class="fob-nophoto">${ICONES.carton}<span>Photo à venir</span></div>`}
+        </div>
+        <div class="card__body">
+          <p class="card__brand">FOB ${esc(port ? port.nom : p.port)}</p>
+          <h3 class="card__name">${esc(p.designation)}</h3>
+          <p class="card__ref">Réf. ${esc(p.ref)}</p>
+          <div class="buy buy--single">
+            <div class="buy__block buy__block--fob">
+              <div class="buy__head">
+                <span class="buy__qty" title="Carton">${ICONES.carton}<span>${pieces(p.piecesCarton)} <small>pces · ${p.volumeCarton.toLocaleString('fr-FR')} m³</small></span></span>
+                <span class="buy__price">${prixUsd(p.prixFob)}<small>/pce</small></span>
+              </div>
+              <div class="stepper">
+                <button type="button" class="minus" data-fob-step="-${pas}" data-ref="${esc(p.ref)}" aria-label="Retirer ${pas} cartons — ${esc(p.designation)}" ${n === 0 ? 'disabled' : ''}>−</button>
+                <output aria-live="polite">${n}<small> ctn</small></output>
+                <button type="button" class="plus" data-fob-step="${pas}" data-ref="${esc(p.ref)}" aria-label="Ajouter ${pas} cartons — ${esc(p.designation)}">+</button>
+              </div>
+              <button type="button" class="fob-fill" data-fob-fill="${esc(p.ref)}">Compléter le conteneur</button>
+            </div>
+          </div>
+        </div>
+      </article>`;
+  }
+
+  /** Panneau du conteneur du port affiché : jauge, montant, MOQ, réservation. */
+  function panneauConteneur(port) {
+    const b = bilanConteneur(port);
+    const nomPort = data.fob.ports.find(x => x.id === port).nom;
+    const t = typeConteneur(b.c.type);
+    const pct = Math.min(100, Math.round(b.taux * 100));
+    const seuil = Math.round(data.fob.remplissageMin * 100);
+    const reste = Math.max(0, b.capacite * data.fob.remplissageMin - b.volume);
+    return `
+      <div class="fob-panel ${b.complet ? 'is-complet' : ''}">
+        <p class="fob-panel__kicker">Mon conteneur FOB</p>
+        <h2 class="fob-panel__title">${esc(t.nom)} · ${esc(nomPort)}</h2>
+        <div class="fob-types" role="radiogroup" aria-label="Taille du conteneur">
+          ${data.fob.conteneurs.map(c => `<button type="button" role="radio" class="chip" data-cont="${c.id}" aria-checked="${c.id === b.c.type}" aria-pressed="${c.id === b.c.type}">${esc(c.nom)} <small>${c.volumeUtile} m³</small></button>`).join('')}
+        </div>
+        <div class="fob-gauge" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}" aria-label="Remplissage du conteneur">
+          <i style="width:${pct}%"></i><b style="left:${seuil}%"></b>
+        </div>
+        <div class="fob-panel__nums">
+          <span><strong>${fmtM3(b.volume)}</strong> / ${b.capacite} m³ · ${pct} %</span>
+          <span><strong>${fmtUsd.format(b.montant)}</strong> FOB</span>
+        </div>
+        <p class="fob-panel__status">${b.complet
+          ? `Conteneur complet : MOQ atteint (${seuil} % minimum).`
+          : b.cartons ? `Encore ${fmtM3(reste)} pour atteindre le MOQ (${seuil} % du conteneur).` : `MOQ : 1 conteneur complet au départ de ${esc(nomPort)}.`}</p>
+        ${b.cartons ? `<details class="fob-lines"><summary>${b.c.lignes.size} référence${b.c.lignes.size > 1 ? 's' : ''} · ${b.cartons.toLocaleString('fr-FR')} cartons</summary>
+          ${[...b.c.lignes].map(([ref, n]) => { const p = fobProduit(ref); return `<div><span>${esc(p.designation)}</span><span>${n} ctn · ${fmtM3(n * p.volumeCarton)}</span></div>`; }).join('')}
+        </details>` : ''}
+        <button type="button" class="btn btn--red btn--block" id="fob-reserver" ${b.complet ? '' : 'disabled'}>Réserver ce conteneur</button>
+      </div>`;
+  }
+
+  function pageFob() {
+    if (!fob.port) fob.port = data.fob.ports[0].id;
+    app.innerHTML = `
+      <div class="container">
+        ${bandeauSimple('Import direct · hors offre courante', 'Offre FOB')}
+        <p class="mode-note">Prix FOB en dollars US par pièce, au départ du port. MOQ : 1 conteneur complet par port de départ. Les références de plusieurs produits d'un même port peuvent partager le conteneur.</p>
+        <div class="toolbar"><div class="chips" role="group" aria-label="Port de départ" id="fob-ports"></div></div>
+        <div class="fob-layout">
+          <div id="fob-grid"></div>
+          <aside class="fob-aside" id="fob-panel" aria-live="polite"></aside>
+        </div>
+      </div>`;
+    rendreFob();
+  }
+
+  function rendreFob() {
+    if (!$('#fob-grid')) return;
+    $('#fob-ports').innerHTML = data.fob.ports.map(port => {
+      const b = bilanConteneur(port.id);
+      return `<button type="button" class="chip" data-port="${port.id}" aria-pressed="${port.id === fob.port}">Port de ${esc(port.nom)}${b.cartons ? ` · ${Math.round(b.taux * 100)} %` : ''}</button>`;
+    }).join('');
+    const liste = data.fob.produits.filter(p => p.port === fob.port);
+    $('#fob-grid').innerHTML = liste.length
+      ? `<div class="grid grid--fob">${liste.map(carteFob).join('')}</div>`
+      : '<div class="empty"><strong>Aucun produit FOB sur ce port</strong>Votre commercial peut vous renseigner.</div>';
+    $('#fob-panel').innerHTML = panneauConteneur(fob.port);
+    // Barre fixe (téléphone)
+    const b = bilanConteneur(fob.port);
+    $('#fob-bar-text').textContent = `${typeConteneur(b.c.type).nom} · ${data.fob.ports.find(x => x.id === fob.port).nom} — ${Math.min(100, Math.round(b.taux * 100))} %`;
+    $('#fob-bar-sub').textContent = `${fmtM3(b.volume)} / ${b.capacite} m³`;
+    $('#fob-bar-gauge').style.width = `${Math.min(100, b.taux * 100)}%`;
+  }
+
+  function clicFob(e) {
+    const t = e.target.closest('[data-fob-step],[data-fob-fill],[data-port],[data-cont],#fob-reserver');
+    if (!t || t.disabled) return false;
+    if (t.dataset.fobStep) changerCartons(t.dataset.ref, +t.dataset.fobStep);
+    else if (t.dataset.fobFill) changerCartons(t.dataset.fobFill, Infinity);
+    else if (t.dataset.port) { fob.port = t.dataset.port; rendreFob(); }
+    else if (t.dataset.cont) {
+      const c = conteneurDuPort(fob.port);
+      const { volume } = bilanConteneur(fob.port);
+      const cible = typeConteneur(t.dataset.cont);
+      if (volume > cible.volumeUtile) { toast(`Trop de marchandise pour un ${cible.nom} (${fmtM3(volume)})`); return true; }
+      c.type = cible.id; rendreFob();
+    } else if (t.id === 'fob-reserver') {
+      // À brancher : envoi de la demande de réservation au commercial / à l'ERP.
+      const port = data.fob.ports.find(x => x.id === fob.port).nom;
+      fob.conteneurs.delete(fob.port);
+      rendreFob();
+      toast(`Demande de réservation envoyée · conteneur ${port}`);
+    }
+    return true;
   }
 
   /* ---------- Réassort Express ---------- */
@@ -870,6 +1059,7 @@
       case 'recherche': pageRecherche(params.get('q') || ''); pageProduits = true; break;
       case 'marque': pageMarque(seg[1] || ''); pageProduits = true; break;
       case 'reassort': pageReassort(); pageProduits = true; break;
+      case 'fob': if (modeAchat !== 'fob') appliquerMode('fob'); pageFob(); break;
       case 'reliquats': pageReliquats(); break;
       case 'import': pageImport(); break;
       case 'compte': pageCompte(); break;
@@ -885,7 +1075,8 @@
 
     // Barre panier fixe sur téléphone : uniquement sur les pages produits
     $('#cart-bar').hidden = !pageProduits;
-    document.body.classList.toggle('has-cart-bar', pageProduits);
+    $('#fob-bar').hidden = seg[0] !== 'fob';
+    document.body.classList.toggle('has-cart-bar', pageProduits || seg[0] === 'fob');
 
     window.scrollTo(0, 0);
   }
@@ -973,6 +1164,7 @@
   function initEvenements() {
     // Boutons − / + des cartes (délégation)
     app.addEventListener('click', e => {
+      if (clicFob(e)) return;
       const b = e.target.closest('button[data-step]');
       if (b && !b.disabled) changerQuantite(b.dataset.ref, b.dataset.type, +b.dataset.step);
     });
@@ -993,6 +1185,7 @@
     // Panier
     $('#cart-btn').addEventListener('click', ouvrirTiroir);
     $('#cart-bar-btn').addEventListener('click', ouvrirTiroir);
+    $('#fob-bar-btn').addEventListener('click', () => $('#fob-panel').scrollIntoView({ behavior: 'smooth', block: 'center' }));
     $('#drawer-close').addEventListener('click', fermerTiroir);
     $('#drawer-overlay').addEventListener('click', fermerTiroir);
     $('#drawer-body').addEventListener('click', e => {

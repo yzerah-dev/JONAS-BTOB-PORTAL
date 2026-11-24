@@ -48,6 +48,16 @@ Sélecteur en haut de toutes les pages (dans l'en-tête, et dans la barre compac
 
 Champs ajoutés dans `produits.json` : `eligibleCamion` (désigné par Jonas ; activé pour la démo sur 12385, MG076, 18885, JO095, JO094, JO098), `prixCamion` (grille tarifaire à fournir ; vide = « prix à confirmer »), `palettesParCamion` (facultatif).
 
+## Offre FOB
+
+Mode **FOB** dans l'en-tête, page `#/fob`. Sélection hors offre courante (`produits.json` → `fob`), prix FOB en dollars US par pièce au départ du port.
+
+- Un conteneur en préparation par port de départ (Ningbo, Shanghai…). MOQ : 1 conteneur complet par port.
+- Le client choisit 20', 40' ou 40' HC (volumes utiles 28 / 58 / 68 m³, dans `fob.conteneurs`). Le remplissage est calculé en m³ : cartons × `volumeCarton`.
+- Le + ajoute `fob.pasCartons` cartons (50) sans jamais dépasser le volume. « Compléter le conteneur » remplit l'espace restant avec le produit.
+- « Réserver ce conteneur » s'active à partir de `fob.remplissageMin` (90 %). La demande n'est envoyée nulle part pour l'instant (à brancher).
+- Les 5 produits `FOB-EX-…` sont des **exemples fictifs** (`exemple: true`) à remplacer par la vraie sélection : réf., désignation, port, `piecesCarton`, `volumeCarton` (m³), `prixFob` ($), `photo`.
+
 ## À compléter / brancher
 
 - `produits.json` : les champs `null` (prix, EAN, pièces par palette…). À régénérer chaque soir à 20 h depuis l'ERP.

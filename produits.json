@@ -73,6 +73,98 @@
       "2748"
     ]
   },
+  "fob": {
+    "_info": "Offre FOB : produits hors offre courante, prix FOB en USD par pièce au départ du port. MOQ = 1 conteneur complet par port. Les produits marqués exemple: true sont des données de démonstration à remplacer.",
+    "devise": "USD",
+    "remplissageMin": 0.9,
+    "pasCartons": 50,
+    "conteneurs": [
+      {
+        "id": "20",
+        "nom": "20'",
+        "volumeUtile": 28
+      },
+      {
+        "id": "40",
+        "nom": "40'",
+        "volumeUtile": 58
+      },
+      {
+        "id": "40HC",
+        "nom": "40' HC",
+        "volumeUtile": 68
+      }
+    ],
+    "ports": [
+      {
+        "id": "ningbo",
+        "nom": "Ningbo",
+        "pays": "Chine"
+      },
+      {
+        "id": "shanghai",
+        "nom": "Shanghai",
+        "pays": "Chine"
+      }
+    ],
+    "produits": [
+      {
+        "ref": "FOB-EX-01",
+        "designation": "Seau ménage 10 L avec essoreur",
+        "marque": "Exemple",
+        "port": "ningbo",
+        "piecesCarton": 12,
+        "volumeCarton": 0.11,
+        "prixFob": 1.35,
+        "photo": null,
+        "exemple": true
+      },
+      {
+        "ref": "FOB-EX-02",
+        "designation": "Balai brosse coco 30 cm",
+        "marque": "Exemple",
+        "port": "ningbo",
+        "piecesCarton": 24,
+        "volumeCarton": 0.065,
+        "prixFob": 0.62,
+        "photo": null,
+        "exemple": true
+      },
+      {
+        "ref": "FOB-EX-03",
+        "designation": "Gants ménage latex (paire)",
+        "marque": "Exemple",
+        "port": "ningbo",
+        "piecesCarton": 240,
+        "volumeCarton": 0.045,
+        "prixFob": 0.14,
+        "photo": null,
+        "exemple": true
+      },
+      {
+        "ref": "FOB-EX-04",
+        "designation": "Boîtes alimentaires x3",
+        "marque": "Exemple",
+        "port": "shanghai",
+        "piecesCarton": 36,
+        "volumeCarton": 0.072,
+        "prixFob": 0.88,
+        "photo": null,
+        "exemple": true
+      },
+      {
+        "ref": "FOB-EX-05",
+        "designation": "Bac de rangement 30 L",
+        "marque": "Exemple",
+        "port": "shanghai",
+        "piecesCarton": 10,
+        "volumeCarton": 0.135,
+        "prixFob": 1.95,
+        "photo": null,
+        "exemple": true
+      }
+    ]
+  },
   "produits": [
     {"ref": "MG076", "designation": "Vinaigre ménager citron 1 L", "marque": "Les Secrets de Mamie Georgette", "rayon": "menage", "sousCategorie": "Vinaigres & nettoyants", "piecesColis": 12, "piecesPalette": 600, "ean": "3701571444435", "prixUnitaire": 0.7, "pvc": 1.49, "badge": "TOP", "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null},
     {"ref": "12385", "designation": "Tampons à récurer inox x4", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Tampons & éponges", "piecesColis": 48, "piecesPalette": 1152, "ean": "3257990109863", "prixUnitaire": 0.65, "pvc": null, "badge": "TOP", "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null},
