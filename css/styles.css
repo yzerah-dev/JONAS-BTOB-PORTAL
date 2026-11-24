@@ -502,6 +502,10 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
 .badge--TOP { background: var(--rouge); color: var(--blanc); }
 .badge--BEST { background: var(--noir); color: var(--blanc); }
 .badge--NEW { background: var(--jaune); color: var(--noir); }
+.badge--RUPTURE { background: var(--blanc); color: var(--rouge); border: 2px solid var(--rouge); }
+.card.is-rupture .card__photo img { opacity: .45; }
+.mode.is-locked { opacity: .55; }
+
 .card__body { padding: 4px 10px 10px; display: flex; flex-direction: column; flex: 1; }
 .card__brand { font-size: 11px; font-weight: 700; color: var(--gris-texte); text-transform: uppercase; letter-spacing: .06em; line-height: 1.2; }
 .card__name { font-size: 15px; font-weight: 800; line-height: 1.2; margin-top: 3px; letter-spacing: -.01em; }

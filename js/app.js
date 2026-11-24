@@ -120,11 +120,13 @@
   }
 
   /**
-   * Le produit peut-il être ajouté au colis / à la palette ?
-   * Seule la rupture palette bloque l'ajout. Un produit dont le prix ou le colisage
-   * manque reste commandable : sa ligne est marquée « prix à confirmer ».
+   * Le produit peut-il être ajouté au colis / à la palette / au camion ?
+   * La rupture de stock (produit permanent affiché « Rupture ») et la rupture palette
+   * bloquent l'ajout. Un produit dont le prix ou le colisage manque reste commandable :
+   * sa ligne est marquée « prix à confirmer ».
    */
   function peutAjouter(p, type) {
+    if (p.enStock === false) return false;
     if (type === 'camion') return !!p.eligibleCamion;
     return type === 'colis' || p.paletteDisponible;
   }
@@ -217,9 +219,10 @@
     const ruptPalette = !p.paletteDisponible;
     const refEan = `Réf. ${esc(p.ref)} · EAN ${p.ean ? esc(p.ean) : 'X'}`;
     return `
-      <article class="card">
+      <article class="card ${enRupture(p) ? 'is-rupture' : ''}">
         <div class="card__photo">
-          ${p.badge ? `<span class="badge badge--${esc(p.badge)}">${esc(p.badge)}</span>` : ''}
+          ${enRupture(p) ? '<span class="badge badge--RUPTURE">RUPTURE</span>'
+            : p.badge ? `<span class="badge badge--${esc(p.badge)}">${esc(p.badge)}</span>` : ''}
           <img src="images/produits/${encodeURIComponent(p.ref)}.jpg" alt="${esc(p.designation)}" loading="lazy" width="700" height="700">
         </div>
         <div class="card__body">
@@ -405,8 +408,8 @@
     return `
       <div class="modes" role="radiogroup" aria-label="Mode d'achat">
         ${Object.entries(MODES).map(([id, m]) => `
-          <button type="button" role="radio" class="mode" data-mode="${id}" aria-checked="${id === modeAchat}">
-            <strong>${esc(m.titre)}</strong><small>${esc(m.sous)}</small>
+          <button type="button" role="radio" class="mode ${id === 'fob' && !fobAutorise() ? 'is-locked' : ''}" data-mode="${id}" aria-checked="${id === modeAchat}">
+            <strong>${esc(m.titre)}</strong><small>${id === 'fob' && !fobAutorise() ? 'Sur autorisation' : esc(m.sous)}</small>
           </button>`).join('')}
       </div>`;
   }
@@ -418,8 +421,12 @@
     document.querySelectorAll('.mode').forEach(b => b.setAttribute('aria-checked', b.dataset.mode === id ? 'true' : 'false'));
   }
 
+  /** Le client connecté a-t-il accès à l'offre FOB ? */
+  const fobAutorise = () => !!data.client.autorisationFob;
+
   function changerMode(id) {
     if (!MODES[id] || id === modeAchat) return;
+    if (id === 'fob' && !fobAutorise()) { toast('Offre FOB sur autorisation : contactez votre commercial'); return; }
     appliquerMode(id);
     toast(`Mode ${MODES[id].titre}`);
     majBarres();
@@ -430,13 +437,21 @@
   function MODE_CARTE() { return modeAchat === 'fob' ? 'standard' : modeAchat; }
   function enModeFob() { return modeAchat === 'fob'; }
 
+  /**
+   * Visible hors FOB ?
+   * - produit « FOB seulement » : non ;
+   * - en stock : oui ;
+   * - hors stock : oui s'il est permanent (affiché « Rupture »), sinon non (il ne reste visible qu'en FOB).
+   */
+  const visibleHorsFob = p => !p.fobSeulement && (p.enStock !== false || !!p.permanent);
+  const enRupture = p => p.enStock === false;
+
   /** Produits visibles selon le mode d'achat. */
   function filtrerParMode(liste) {
-    // FOB : produits ayant une offre FOB (dont tous les hors stock), filtrés par port
-    if (modeAchat === 'fob') return liste.filter(p => p.fob && (fob.portFiltre === 'tous' || p.fob.port === fob.portFiltre));
-    // Autres modes : uniquement l'offre en stock
-    liste = liste.filter(p => p.enStock !== false);
-    if (modeAchat === 'tradepal') return liste.filter(p => p.paletteDisponible);
+    // FOB (clients autorisés) : produits ayant une offre FOB, filtrés par port
+    if (modeAchat === 'fob') return fobAutorise() ? liste.filter(p => p.fob && (fob.portFiltre === 'tous' || p.fob.port === fob.portFiltre)) : [];
+    liste = liste.filter(visibleHorsFob);
+    if (modeAchat === 'tradepal') return liste.filter(p => p.paletteDisponible || enRupture(p));
     if (modeAchat === 'camion') return liste.filter(p => p.eligibleCamion);
     return liste;
   }
@@ -826,7 +841,7 @@
           <p class="card__brand">${esc(p.marque)}</p>
           <h3 class="card__name">${esc(p.designation)}</h3>
           <p class="card__ref">Réf. ${esc(p.ref)} · EAN ${p.ean ? esc(p.ean) : 'X'}</p>
-          <p class="card__pvc">FOB ${esc(nomPort(p.fob.port))} <span>·</span> ${p.enStock === false ? 'Hors stock' : 'Aussi en stock'}</p>
+          <p class="card__pvc">FOB ${esc(nomPort(p.fob.port))} <span>·</span> ${p.fobSeulement ? 'Uniquement en FOB' : p.enStock === false ? 'Hors stock' : 'Aussi en stock'}</p>
           <div class="buy buy--single">
             <div class="buy__block buy__block--fob">
               <div class="buy__head">
@@ -1053,9 +1068,9 @@
       if (!Number.isFinite(qte)) return; // ligne d'en-tête ou vide
       const type = /cam/i.test(typeTxt || '') ? 'camion' : /pal/i.test(typeTxt || '') ? 'palette' : 'colis';
       const p = produitsParRef.get(code.toUpperCase()) || produitsParRef.get(code) || data.produits.find(x => x.ean === code);
-      if (!p) { rapport.push(`<p class="ko">✗ ${esc(code)} : référence inconnue</p>`); return; }
+      if (!p || !visibleHorsFob(p)) { rapport.push(`<p class="ko">✗ ${esc(code)} : référence inconnue ou disponible uniquement en FOB</p>`); return; }
       if (qte <= 0) return;
-      if (!peutAjouter(p, type)) { rapport.push(`<p class="ko">✗ ${esc(p.ref)} : ${type === 'camion' ? 'non éligible au camion complet' : 'palette en rupture'}</p>`); return; }
+      if (!peutAjouter(p, type)) { rapport.push(`<p class="ko">✗ ${esc(p.ref)} : ${p.enStock === false ? 'en rupture' : type === 'camion' ? 'non éligible au camion complet' : 'palette en rupture'}</p>`); return; }
       changerQuantite(p.ref, type, qte, { silencieux: true });
       ajouts++;
       rapport.push(`<p>✓ ${libelleQuantite(qte, type)} · ${esc(p.designation)}</p>`);
@@ -1169,7 +1184,7 @@
     if (/nouveau|arrivage/.test(q)) {
       return 'Nouveautés : ' + data.selections.nouveautes.map(r => produitsParRef.get(r)?.designation).filter(Boolean).join(', ') + '.\nRetrouvez-les dans « Les Nouveautés » sur l\'accueil.';
     }
-    const resultats = rechercher(question).slice(0, 3);
+    const resultats = rechercher(question).filter(visibleHorsFob).slice(0, 3);
     if (resultats.length) {
       return 'Voici ce que j\'ai trouvé :\n' + resultats.map(x => `• ${x.designation} (réf. ${x.ref}) — ${prix(x.prixUnitaire)} HT / pce`).join('\n');
     }

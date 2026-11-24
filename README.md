@@ -38,6 +38,19 @@ N'importe quel hébergement de fichiers statiques convient (Netlify, OVH, serveu
 - Donnée manquante (`null` dans `produits.json`) : affichage « X,XX € » / « X pces ». Le produit reste commandable ; sa ligne est marquée « prix à confirmer » et n'entre pas dans le total.
 - `paletteDisponible: false` : le + palette est désactivé (« Rupture »).
 
+## Affichage selon le stock
+
+| Produit | Standard / Trade Pal / Trade Truck | FOB |
+|---|---|---|
+| En stock | Affiché, commandable | Affiché s'il a une offre `fob` |
+| Hors stock, **permanent** (`permanent: true`) | Toujours affiché, badge « RUPTURE », ajout bloqué | Affiché s'il a une offre `fob` |
+| Hors stock, **non permanent** | Masqué | Affiché (offre `fob`) |
+| **Uniquement FOB** (`fobSeulement: true`) | Masqué | Affiché |
+
+`enStock` vient du stock dispo de l'ERP (> 0). `permanent` et `fobSeulement` sont à renseigner par Jonas (démo : tous les produits du kit sont permanents ; 2750 est en rupture, comme dans l'ERP).
+
+**Accès FOB sur autorisation** : `client.autorisationFob`. Sans autorisation, le bouton FOB affiche « Sur autorisation » et renvoie vers le commercial.
+
 ## Modes d'achat
 
 Sélecteur en haut de toutes les pages (dans l'en-tête, et dans la barre compacte au défilement sur ordinateur) :
