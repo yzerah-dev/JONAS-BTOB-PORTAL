@@ -215,24 +215,34 @@
 
   function carteProduit(p) {
     if (enModeFob() && p.fob) return carteFob(p);
-    const modeAchat = MODE_CARTE();
     const m = marge(p);
-    const pPal = prixPalette(p);
-    const ruptPalette = !p.paletteDisponible;
     const refEan = `Réf. ${esc(p.ref)} · EAN ${p.ean ? esc(p.ean) : 'X'}`;
     return `
       <article class="card ${enRupture(p) ? 'is-rupture' : ''}">
         <div class="card__photo">
           ${enRupture(p) ? '<span class="badge badge--RUPTURE">RUPTURE</span>'
             : p.badge ? `<span class="badge badge--${esc(p.badge)}">${esc(p.badge)}</span>` : ''}
-          <img src="images/produits/${encodeURIComponent(p.ref)}.jpg" alt="${esc(p.designation)}" loading="lazy" width="700" height="700">
+          <a href="#/produit/${encodeURIComponent(p.ref)}" class="card__link" aria-label="Voir la fiche — ${esc(p.designation)}">
+            <img src="images/produits/${encodeURIComponent(p.ref)}.jpg" alt="${esc(p.designation)}" loading="lazy" width="700" height="700">
+          </a>
         </div>
         <div class="card__body">
           <p class="card__brand">${esc(p.marque)}</p>
-          <h3 class="card__name">${esc(p.designation)}</h3>
+          <h3 class="card__name"><a href="#/produit/${encodeURIComponent(p.ref)}">${esc(p.designation)}</a></h3>
           <p class="card__ref">${refEan}</p>
           <p class="card__pvc">PVC ${prix(p.pvc)} <span>·</span> Marge ${m == null ? 'X' : m.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}&nbsp;%</p>
 
+          ${blocAchat(p)}
+        </div>
+      </article>`;
+  }
+
+  /** Blocs d'achat d'un produit selon le mode (colis / palette / camion), avec leurs sélecteurs. */
+  function blocAchat(p) {
+    const modeAchat = MODE_CARTE();
+    const pPal = prixPalette(p);
+    const ruptPalette = !p.paletteDisponible;
+    return `
           <div class="buy ${modeAchat === 'standard' ? '' : 'buy--single'}">
             ${modeAchat === 'standard' ? `
             <div class="buy__block buy__block--colis">
@@ -274,9 +284,7 @@
               <span class="sr-only">Camion complet de ${palettesCamion(p)} palettes, ${pieces(piecesCamion(p))} pièces</span>
               ${stepper(p, 'camion')}
             </div>`}
-          </div>
-        </div>
-      </article>`;
+          </div>`;
   }
 
   /* =========================================================
@@ -349,7 +357,7 @@
       <div class="line">
         <img src="images/produits/${encodeURIComponent(ref)}.jpg" alt="">
         <div>
-          <p class="line__name">${esc(p.designation)}</p>
+          <p class="line__name"><a href="#/produit/${encodeURIComponent(ref)}">${esc(p.designation)}</a></p>
           <p class="line__detail">${detail}</p>
           <button type="button" class="line__remove" data-remove="${esc(cle)}">Retirer</button>
         </div>
@@ -898,8 +906,6 @@
   }
 
   function carteFob(p) {
-    const n = fob.conteneurs.get(p.fob.port)?.lignes.get(p.ref) || 0;
-    const pas = data.fob.pasCartons;
     return `
       <article class="card card--fob">
         <div class="card__photo ${p.photo === false ? 'card__photo--fob' : ''}">
@@ -907,13 +913,23 @@
           <span class="port-tag">${ICONES.ancre}${esc(nomPort(p.fob.port))}</span>
           ${p.photo === false
             ? `<div class="fob-nophoto">${ICONES.carton}<span>Photo à venir</span></div>`
-            : `<img src="images/produits/${encodeURIComponent(p.ref)}.jpg" alt="${esc(p.designation)}" loading="lazy" width="700" height="700">`}
+            : `<a href="#/produit/${encodeURIComponent(p.ref)}" class="card__link" aria-label="Voir la fiche — ${esc(p.designation)}"><img src="images/produits/${encodeURIComponent(p.ref)}.jpg" alt="${esc(p.designation)}" loading="lazy" width="700" height="700"></a>`}
         </div>
         <div class="card__body">
           <p class="card__brand">${esc(p.marque)}</p>
-          <h3 class="card__name">${esc(p.designation)}</h3>
+          <h3 class="card__name"><a href="#/produit/${encodeURIComponent(p.ref)}">${esc(p.designation)}</a></h3>
           <p class="card__ref">Réf. ${esc(p.ref)} · EAN ${p.ean ? esc(p.ean) : 'X'}</p>
           <p class="card__pvc">FOB ${esc(nomPort(p.fob.port))} <span>·</span> ${p.fobSeulement ? 'Uniquement en FOB' : p.enStock === false ? 'Hors stock' : 'Aussi en stock'}</p>
+          ${blocAchatFob(p)}
+        </div>
+      </article>`;
+  }
+
+  /** Bloc d'achat FOB : carton, MOQ, prix 20' complet, sélecteur de cartons. */
+  function blocAchatFob(p) {
+    const n = fob.conteneurs.get(p.fob.port)?.lignes.get(p.ref) || 0;
+    const pas = data.fob.pasCartons;
+    return `
           <div class="buy buy--single">
             <div class="buy__block buy__block--fob">
               <p class="fob-carton">${ICONES.carton}<span>Carton de <strong>${pieces(p.piecesColis)} pces</strong> · ${p.fob.volumeCarton.toLocaleString('fr-FR')} m³</span></p>
@@ -934,9 +950,7 @@
               </div>
               <button type="button" class="fob-fill" data-fob-fill="${esc(p.ref)}">Compléter le conteneur</button>
             </div>
-          </div>
-        </div>
-      </article>`;
+          </div>`;
   }
 
   /** Panneau d'un conteneur : taille, jauge, montant, MOQ, réservation. */
@@ -1034,6 +1048,117 @@
       majFob();
     }
     return true;
+  }
+
+  /* =========================================================
+     Fiche produit (#/produit/REF)
+     ========================================================= */
+  const fmtNb = n => n == null ? 'X' : n.toLocaleString('fr-FR');
+  const pct1 = v => v == null ? 'X' : v.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+  /** Ligne « libellé / valeur » du tableau de caractéristiques (masquée si valeur absente et facultative). */
+  const ligneInfo = (label, valeur) => valeur == null ? '' : `<div class="spec"><dt>${label}</dt><dd>${valeur}</dd></div>`;
+
+  function pageProduit(ref) {
+    const p = produitsParRef.get(ref);
+    // Produit inconnu, ou masqué pour ce client (hors stock non permanent, FOB seulement sans autorisation)
+    if (!p || !(visibleHorsFob(p) || (p.fob && fobAutorise()))) {
+      app.innerHTML = `<div class="container"><div class="empty"><strong>Produit indisponible</strong>Cette référence n'est pas proposée actuellement. Votre commercial peut vous renseigner.<br><a href="#/" class="btn btn--black" style="margin-top:14px">Retour à l'accueil</a></div></div>`;
+      return;
+    }
+    const rayon = data.rayons.find(r => r.id === p.rayon);
+    const enFob = enModeFob() && p.fob;
+    const m = marge(p);
+
+    const rendre = () => {
+      // Disponibilité
+      const dispo = p.fobSeulement ? { cls: 'fob', txt: 'Disponible uniquement en FOB' }
+        : enRupture(p) ? { cls: 'rupture', txt: 'Rupture de stock' }
+        : { cls: 'ok', txt: 'En stock' };
+      const stock = p.stockDispo != null && !p.fobSeulement
+        ? `${fmtNb(p.stockDispo)} pces${p.piecesColis ? ` · ${fmtNb(Math.floor(p.stockDispo / p.piecesColis))} colis` : ''}${p.piecesPalette ? ` · ${fmtNb(Math.floor(p.stockDispo / p.piecesPalette))} palettes` : ''}`
+        : null;
+      const palettisation = p.piecesPalette != null
+        ? `${fmtNb(p.piecesPalette)} pces${p.piecesColis ? ` · ${fmtNb(Math.round(p.piecesPalette / p.piecesColis))} colis` : ''}${p.cartonsParCouche ? ` (${p.cartonsParCouche} colis/couche × ${p.couches} couches)` : ''}`
+        : 'X pces';
+
+      // Même rayon : jusqu'à 4 produits visibles dans le mode choisi
+      const proches = filtrerParMode(data.produits.filter(x => x.rayon === p.rayon && x.ref !== p.ref))
+        .sort((a, b) => (b.sousCategorie === p.sousCategorie) - (a.sousCategorie === p.sousCategorie)).slice(0, 4);
+
+      app.innerHTML = `
+        <div class="container">
+          <nav class="crumbs" aria-label="Fil d'Ariane">
+            <a href="#/">Accueil</a><span>›</span>
+            ${rayon ? `<a href="#/rayon/${rayon.id}">${esc(rayon.nom)}</a><span>›</span>` : ''}
+            ${rayon && p.sousCategorie ? `<a href="#/rayon/${rayon.id}?sc=${encodeURIComponent(p.sousCategorie)}">${esc(p.sousCategorie)}</a><span>›</span>` : ''}
+            <span aria-current="page">${esc(p.designation)}</span>
+          </nav>
+
+          <div class="pdp">
+            <div class="pdp__photo ${enRupture(p) ? 'is-rupture' : ''}">
+              ${p.exemple ? '<span class="badge badge--EX">EXEMPLE</span>'
+                : enRupture(p) ? '<span class="badge badge--RUPTURE">RUPTURE</span>'
+                : p.badge ? `<span class="badge badge--${esc(p.badge)}">${esc(p.badge)}</span>` : ''}
+              ${p.fob ? `<span class="port-tag">${ICONES.ancre}FOB ${esc(nomPort(p.fob.port))}</span>` : ''}
+              ${p.photo === false
+                ? `<div class="fob-nophoto">${ICONES.carton}<span>Photo à venir</span></div>`
+                : `<img src="images/produits/${encodeURIComponent(p.ref)}.jpg" alt="${esc(p.designation)}" width="700" height="700">`}
+            </div>
+
+            <div class="pdp__info">
+              <p class="card__brand">${esc(p.marque)}</p>
+              <h1 class="pdp__title">${esc(p.designation)}</h1>
+              <p class="card__ref">Réf. ${esc(p.ref)} · EAN ${p.ean ? esc(p.ean) : 'X'}</p>
+              <p class="pill pill--${dispo.cls}">${dispo.txt}${stock && !enRupture(p) ? ` · ${stock}` : ''}</p>
+              ${!enFob ? `<p class="pdp__pvc">PVC conseillé <strong>${prix(p.pvc)}</strong> · Marge <strong>${pct1(m)} %</strong></p>` : ''}
+
+              <div class="pdp__buy">
+                ${enFob ? blocAchatFob(p)
+                  : visibleHorsFob(p) ? blocAchat(p)
+                  : `<div class="empty">Ce produit se commande en FOB.<br><button type="button" class="btn btn--black" data-mode="fob" style="margin-top:12px">Passer en mode FOB</button></div>`}
+              </div>
+
+              <h2 class="pdp__h2">Caractéristiques</h2>
+              <dl class="specs">
+                ${ligneInfo('Référence', esc(p.ref))}
+                ${ligneInfo('EAN (gencod)', p.ean ? esc(p.ean) : 'X')}
+                ${ligneInfo('Marque', esc(p.marque))}
+                ${ligneInfo('Rayon', rayon ? `${esc(rayon.nom)}${p.sousCategorie ? ' › ' + esc(p.sousCategorie) : ''}` : null)}
+                ${ligneInfo('Famille ERP', p.familleErp ? esc(p.familleErp) : null)}
+                ${ligneInfo('Colisage', `${fmtNb(p.piecesColis)} pces par colis`)}
+                ${ligneInfo('Palettisation', palettisation)}
+                ${!p.fobSeulement ? ligneInfo('Prix unitaire HT (colis)', `${prix(p.prixUnitaire)} / pce`) : ''}
+                ${!p.fobSeulement ? ligneInfo('Prix palette HT', p.paletteDisponible ? `${prix(prixPalette(p))} / pce` : 'Palette indisponible') : ''}
+                ${!p.fobSeulement ? ligneInfo(`Prix camion HT (${CONFIG.palettesParCamion} pal.)`, `${prix(p.prixCamion)} / pce`) : ''}
+                ${!p.fobSeulement ? ligneInfo('PVC conseillé', prix(p.pvc)) : ''}
+                ${!p.fobSeulement ? ligneInfo('Marge magasin', `${pct1(m)} %`) : ''}
+                ${ligneInfo('Stock disponible', stock ? `${stock}<small>Arrêté au ${esc(data.stockArreteAu || '')}</small>` : null)}
+                ${ligneInfo('Produit permanent', p.permanent ? 'Oui' : 'Non')}
+              </dl>
+
+              ${p.fob && fobAutorise() ? `
+              <h2 class="pdp__h2">Offre FOB</h2>
+              <dl class="specs">
+                ${ligneInfo('Port de départ', esc(nomPort(p.fob.port)))}
+                ${ligneInfo('Prix FOB (MOQ)', `${prixUsd(p.fob.prixFob)} / pce`)}
+                ${ligneInfo('MOQ', moqCartons(p) ? `${fmtNb(moqCartons(p))} ctn · ${fmtNb(p.piecesColis == null ? null : moqCartons(p) * p.piecesColis)} pces` : 'Sans minimum')}
+                ${ligneInfo("Prix conteneur 20' complet", `${prixUsd(p.fob.prixConteneur20)} / pce`)}
+                ${ligneInfo("Quantité 20' complet", `${fmtNb(cartons20(p))} ctn · ${fmtNb(p.piecesColis == null ? null : cartons20(p) * p.piecesColis)} pces`)}
+                ${ligneInfo('Volume carton', `${p.fob.volumeCarton.toLocaleString('fr-FR')} m³`)}
+              </dl>` : ''}
+            </div>
+          </div>
+
+          ${proches.length ? `
+          <section class="section">
+            <h2 class="section__title">Dans le même rayon</h2>
+            <div class="grid">${proches.map(carteProduit).join('')}</div>
+          </section>` : ''}
+        </div>`;
+    };
+    rerendreListe = rendre;
+    rendre();
   }
 
   /* ---------- Réassort Express ---------- */
@@ -1206,6 +1331,7 @@
     switch (seg[0]) {
       case undefined: pageAccueil(); break;
       case 'rayon': pageRayon(seg[1], params); pageProduits = true; break;
+      case 'produit': pageProduit(seg[1]); pageProduits = true; break;
       case 'selection': pageSelection(seg[1]); pageProduits = true; break;
       case 'catalogue': pageCatalogue(); pageProduits = true; break;
       case 'recherche': pageRecherche(params.get('q') || ''); pageProduits = true; break;

@@ -725,6 +725,38 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
 .toast::before { content: "✓"; flex: none; width: 22px; height: 22px; border-radius: 50%; background: var(--rouge); display: grid; place-items: center; font-size: 13px; }
 .toast.is-visible { transform: translate(-50%, 0); opacity: 1; }
 
+/* ---------- Fiche produit ---------- */
+.card__link { display: block; height: 100%; }
+.card__name a:hover, .line__name a:hover { text-decoration: underline; }
+.crumbs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding-top: 18px; font-size: 13px; color: var(--gris-texte); }
+.crumbs a { font-weight: 600; color: var(--noir); }
+.crumbs a:hover { text-decoration: underline; }
+.crumbs [aria-current] { color: var(--gris-texte); }
+.pdp { display: grid; gap: 20px; margin-top: 14px; }
+.pdp__photo { position: relative; aspect-ratio: 1; max-width: 100%; border: 1px solid var(--bordure); border-radius: var(--radius-card); overflow: hidden; background: var(--blanc); }
+.pdp__photo img { width: 100%; height: 100%; object-fit: contain; }
+.pdp__photo.is-rupture img { opacity: .45; }
+.pdp__info { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.pdp__title { font-size: 28px; }
+.pdp__pvc { font-size: 15px; }
+.pill { justify-self: start; padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 800; border: 1.5px solid var(--noir); }
+.pill--ok { background: var(--noir); color: var(--blanc); }
+.pill--rupture { border-color: var(--rouge); color: var(--rouge); }
+.pill--fob { background: var(--rouge); border-color: var(--rouge); color: var(--blanc); }
+.pdp__buy { container-type: inline-size; margin-top: 4px; }
+.pdp__buy .empty { margin-top: 0; }
+.pdp__h2 { font-size: 20px; margin-top: 14px; }
+.specs { margin: 0; border-top: 1px solid var(--bordure); }
+.spec { display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--bordure); font-size: 14px; }
+.spec dt { color: var(--gris-texte); font-weight: 600; }
+.spec dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.spec dd small { display: block; font-weight: 500; color: var(--gris-texte); font-size: 12px; margin-top: 2px; }
+@media (min-width: 900px) {
+  .pdp { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; }
+  .pdp__photo { position: sticky; top: calc(var(--minibar-h) + 70px); align-self: start; }
+  .pdp__title { font-size: 38px; }
+}
+
 /* ---------- Pages simples (réassort, reliquats, import, compte) ---------- */
 .page-head { padding-top: 24px; }
 .page-head h1 { font-size: 32px; }

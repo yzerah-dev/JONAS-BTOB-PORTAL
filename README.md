@@ -30,6 +30,19 @@ N'importe quel hébergement de fichiers statiques convient (Netlify, OVH, serveu
 - `#/catalogue` · `#/recherche?q=…` · `#/marque/Ultranet`
 - `#/reassort` Réassort Express · `#/reliquats` Mes Reliquats (bouton retiré, page conservée) · `#/import` Import Excel · `#/compte` Espace client
 
+## Fiche produit
+
+`#/produit/<réf>` : on y entre en cliquant sur la photo ou le nom d'un produit (cartes, panier). Elle montre :
+
+- fil d'Ariane (rayon › sous-catégorie), grande photo, marque, désignation, réf. et EAN ;
+- disponibilité (En stock + quantités en pièces / colis / palettes, Rupture, ou Uniquement en FOB) ;
+- les blocs d'achat du mode choisi (colis / palette, Trade Pal, FOB) ;
+- les caractéristiques : colisage, palettisation (colis par couche × couches), prix colis / palette / camion, PVC, marge, stock disponible avec sa date, famille ERP, produit permanent ;
+- l'offre FOB (port, prix au MOQ, MOQ, prix et quantité 20' complet, volume carton) pour les clients autorisés ;
+- 4 produits du même rayon.
+
+Données ERP reprises du connecteur Stock Jonas (stock arrêté au 27 octobre 2026) : `familleErp`, `stockDispo`, `cartonsParCouche`, `couches`, et EAN / colisage / palettisation manquants de MG073, JO013 et JCB031.
+
 ## Règles de calcul
 
 - Prix palette = prix colis unitaire × 0,95, arrondi au centime (calculé, pas stocké).
