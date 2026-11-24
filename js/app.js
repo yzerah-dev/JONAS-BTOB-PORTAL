@@ -842,6 +842,28 @@
     return fob.conteneurs.get(port);
   }
 
+  /** MOQ d'une référence FOB, en cartons (0 = pas de minimum). */
+  const moqCartons = p => p.fob.moqCartons || 0;
+
+  /** Cartons d'un produit pour remplir un conteneur 20' complet (au seuil de remplissage). */
+  function cartons20(p) {
+    const vol20 = (typeConteneur('20') || data.fob.conteneurs[0]).volumeUtile;
+    return Math.floor((vol20 * data.fob.remplissageMin) / p.fob.volumeCarton);
+  }
+
+  /**
+   * Prix FOB à la pièce pour une quantité donnée :
+   * prix « conteneur 20' complet » dès que la référence remplit à elle seule un 20', sinon prix FOB (au MOQ).
+   */
+  function prixFobPour(p, nCartons) {
+    const plein20 = p.fob.prixConteneur20 != null && nCartons >= cartons20(p);
+    return { pu: plein20 ? p.fob.prixConteneur20 : p.fob.prixFob, plein20 };
+  }
+  function montantFob(p, nCartons) {
+    const { pu } = prixFobPour(p, nCartons);
+    return pu != null && p.piecesColis != null ? nCartons * p.piecesColis * pu : null;
+  }
+
   /** Volume (m³), montant ($) et taux de remplissage du conteneur d'un port. */
   function bilanConteneur(port) {
     const c = conteneurDuPort(port);
@@ -850,7 +872,7 @@
       const p = produitsParRef.get(ref);
       volume += n * p.fob.volumeCarton;
       cartons += n;
-      if (p.fob.prixFob != null && p.piecesColis != null) montant += n * p.piecesColis * p.fob.prixFob;
+      montant += montantFob(p, n) ?? 0;
     }
     const capacite = typeConteneur(c.type).volumeUtile;
     return { c, volume, montant, cartons, capacite, taux: volume / capacite, complet: volume / capacite >= data.fob.remplissageMin };
@@ -862,16 +884,21 @@
     const port = p.fob.port;
     const { c, volume, capacite } = bilanConteneur(port);
     const actuel = c.lignes.get(ref) || 0;
+    const moq = moqCartons(p);
     let message = null;
     if (delta > 0) {
+      // Premier ajout : on part directement du MOQ de la référence
+      if (actuel + delta < moq) delta = moq - actuel;
       const place = Math.floor((capacite - volume + 1e-9) / p.fob.volumeCarton);
       if (place <= 0) { toast(`Conteneur ${nomPort(port)} plein`); return; }
+      if (actuel + place < moq) { toast(`Place insuffisante pour le MOQ (${moq} cartons)`); return; }
       if (delta > place) { delta = place; message = `Conteneur ${nomPort(port)} complété : +${place} cartons`; }
     }
-    const n = Math.max(0, actuel + delta);
+    let n = Math.max(0, actuel + delta);
+    if (delta < 0 && n < moq) n = 0; // sous le MOQ : la référence est retirée
     if (n === 0) c.lignes.delete(ref); else c.lignes.set(ref, n);
     fob.dernierPort = port;
-    if (delta > 0) toast(message || `${n} cartons · ${p.designation} → conteneur ${nomPort(port)}`);
+    if (delta > 0) toast(message || `${n} cartons · ${p.designation} → conteneur ${nomPort(port)}${prixFobPour(p, n).plein20 ? " · prix 20' complet" : ''}`);
     majFob();
   }
 
@@ -894,12 +921,19 @@
           <p class="card__pvc">FOB ${esc(nomPort(p.fob.port))} <span>·</span> ${p.fobSeulement ? 'Uniquement en FOB' : p.enStock === false ? 'Hors stock' : 'Aussi en stock'}</p>
           <div class="buy buy--single">
             <div class="buy__block buy__block--fob">
-              <div class="buy__head">
-                <span class="buy__qty" title="Carton">${ICONES.carton}<span>${pieces(p.piecesColis)} <small>pces · ${p.fob.volumeCarton.toLocaleString('fr-FR')} m³</small></span></span>
-                <span class="buy__price">${prixUsd(p.fob.prixFob)}<small>/pce</small></span>
+              <p class="fob-carton">${ICONES.carton}<span>Carton de <strong>${pieces(p.piecesColis)} pces</strong> · ${p.fob.volumeCarton.toLocaleString('fr-FR')} m³</span></p>
+              <div class="tiers">
+                <div class="tier">
+                  <span class="tier__label"><span>MOQ<small>${moqCartons(p) ? `${moqCartons(p).toLocaleString('fr-FR')} ctn · ${pieces(p.piecesColis == null ? null : moqCartons(p) * p.piecesColis)} pces` : 'Sans minimum'}</small></span></span>
+                  <span class="buy__price">${prixUsd(p.fob.prixFob)}<small>/pce</small></span>
+                </div>
+                <div class="tier tier--camion">
+                  <span class="tier__label"><span>Conteneur 20' complet<small>${cartons20(p).toLocaleString('fr-FR')} ctn · ${pieces(p.piecesColis == null ? null : cartons20(p) * p.piecesColis)} pces</small></span></span>
+                  <span class="buy__price">${prixUsd(p.fob.prixConteneur20)}<small>/pce</small></span>
+                </div>
               </div>
               <div class="stepper">
-                <button type="button" class="minus" data-fob-step="-${pas}" data-ref="${esc(p.ref)}" aria-label="Retirer ${pas} cartons — ${esc(p.designation)}" ${n === 0 ? 'disabled' : ''}>−</button>
+                <button type="button" class="minus" data-fob-step="-${pas}" data-ref="${esc(p.ref)}" aria-label="Retirer ${pas} cartons (sous le MOQ, la référence est retirée) — ${esc(p.designation)}" ${n === 0 ? 'disabled' : ''}>−</button>
                 <output aria-live="polite">${n}<small> ctn</small></output>
                 <button type="button" class="plus" data-fob-step="${pas}" data-ref="${esc(p.ref)}" aria-label="Ajouter ${pas} cartons — ${esc(p.designation)}">+</button>
               </div>
@@ -938,9 +972,11 @@
           <p class="fob-lines__head">Composition · ${b.c.lignes.size} référence${b.c.lignes.size > 1 ? 's' : ''} · ${b.cartons.toLocaleString('fr-FR')} cartons</p>
           ${[...b.c.lignes].map(([ref, n]) => {
             const p = produitsParRef.get(ref);
-            const montant = p.fob.prixFob != null && p.piecesColis != null ? fmtUsd.format(n * p.piecesColis * p.fob.prixFob) : 'X,XX $US';
+            const m = montantFob(p, n);
+            const { pu, plein20 } = prixFobPour(p, n);
+            const montant = m == null ? 'X,XX $US' : fmtUsd.format(m);
             return `<div class="fob-line">
-              <span><strong>${esc(p.designation)}</strong><small>${n.toLocaleString('fr-FR')} ctn × ${pieces(p.piecesColis)} pces · ${fmtM3(n * p.fob.volumeCarton)}</small></span>
+              <span><strong>${esc(p.designation)}</strong><small>${n.toLocaleString('fr-FR')} ctn × ${pieces(p.piecesColis)} pces × ${prixUsd(pu)} · ${fmtM3(n * p.fob.volumeCarton)}${plein20 ? " · prix 20' complet" : ''}</small></span>
               <span class="fob-line__right">${montant}<button type="button" class="line__remove" data-fob-remove="${esc(ref)}">Retirer</button></span>
             </div>`;
           }).join('')}

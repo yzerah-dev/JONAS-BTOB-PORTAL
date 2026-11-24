@@ -569,6 +569,9 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
 .tier__label small { display: block; font-size: 12px; font-weight: 600; opacity: .7; }
 .tier .buy__price { font-size: 22px; }
 .tier--camion .buy__price { color: var(--jaune); }
+.fob-carton { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.fob-carton svg { font-size: 22px; flex: none; stroke-width: 1.8; }
+.buy__block--fob .tier__label { font-size: 13.5px; }
 
 /* ---------- Offre FOB ---------- */
 .badge--EX { background: var(--blanc); color: var(--noir); border: 1.5px solid var(--noir); }

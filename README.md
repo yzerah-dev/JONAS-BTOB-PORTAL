@@ -80,6 +80,8 @@ Mode **FOB** dans l'en-tête. Le catalogue garde la même structure (rayons, sou
 - chaque carte indique son **port de départ**, et des pastilles permettent de **filtrer par port** ;
 - prix FOB en dollars US par pièce (`fob.prixFob`), carton = `piecesColis` pièces et `fob.volumeCarton` m³.
 
+**Par référence** : `fob.moqCartons` (MOQ de la référence, en cartons) au prix `fob.prixFob`, et `fob.prixConteneur20` = prix à la pièce pour un conteneur 20' complet de ce produit. Le premier + ajoute directement le MOQ ; sous le MOQ, la référence est retirée. Le prix 20' s'applique automatiquement à une ligne dès qu'elle remplit à elle seule un 20' (28 m³ × 90 %).
+
 **MOQ : 1 conteneur complet par port.** Ajouter un produit crée ou remplit automatiquement le conteneur de son port. Le client choisit 20', 40' ou 40' HC (volumes utiles 28 / 58 / 68 m³ dans `fob.conteneurs`). Le + ajoute `fob.pasCartons` cartons (50) sans dépasser le volume ; « Compléter le conteneur » remplit l'espace restant. « Réserver ce conteneur » s'active à partir de `fob.remplissageMin` (90 %) ; la demande n'est envoyée nulle part pour l'instant (à brancher).
 
 Les 7 produits `FOB-EX-…` sont des **exemples fictifs** (`exemple: true`, sans photo) à remplacer par les vrais produits hors stock.
