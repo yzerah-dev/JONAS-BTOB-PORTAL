@@ -28,7 +28,7 @@ N'importe quel hébergement de fichiers statiques convient (Netlify, OVH, serveu
 
 - `#/` accueil · `#/rayon/menage` page rayon · `#/selection/nouveautes` (`imbattables`, `top-ub`)
 - `#/catalogue` · `#/recherche?q=…` · `#/marque/Ultranet`
-- `#/reassort` Réassort Express · `#/reliquats` Mes Reliquats · `#/import` Import Excel · `#/compte` Espace client
+- `#/reassort` Réassort Express · `#/reliquats` Mes Reliquats (bouton retiré, page conservée) · `#/import` Import Excel · `#/compte` Espace client
 
 ## Règles de calcul
 

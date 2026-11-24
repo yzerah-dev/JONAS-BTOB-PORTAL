@@ -95,7 +95,7 @@ svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2
 .header__logo { grid-area: logo; }
 .header__logo img { width: 136px; height: auto; }
 .header__icons { grid-area: icons; display: flex; gap: 8px; align-items: center; }
-.header__actions { grid-area: actions; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.header__actions { grid-area: actions; display: grid; grid-template-columns: 1fr; gap: 8px; }
 .header__actions .btn { min-height: 44px; padding: 0 10px; font-size: 15px; }
 
 .icon-btn {

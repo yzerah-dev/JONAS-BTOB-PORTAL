@@ -1176,7 +1176,6 @@
           </div>
           <div class="panel__row">
             <a href="#/reassort" class="btn btn--red">Réassort Express</a>
-            <a href="#/reliquats" class="btn btn--outline">Mes Reliquats</a>
           </div>
         </div>
       </div>`;
@@ -1262,7 +1261,7 @@
       return 'Le prix palette est 5 % moins cher que le prix colis (prix unitaire × 0,95, arrondi au centime).\nExemple : 0,70 € au colis → 0,67 € à la palette.\nDonnez-moi une référence et je vous calcule le prix exact.';
     }
     if (/commande|suivi|livr|reliquat/.test(q)) {
-      return 'Vos produits en attente sont dans « Mes Reliquats ». Pour le suivi d\'une livraison, votre commercial vous répond sur WhatsApp (bouton « Mon commercial »).';
+      return 'Pour le suivi d\'une commande ou d\'une livraison, votre commercial vous répond sur WhatsApp (bouton « Mon commercial »).';
     }
     if (/nouveau|arrivage/.test(q)) {
       return 'Nouveautés : ' + data.selections.nouveautes.map(r => produitsParRef.get(r)?.designation).filter(Boolean).join(', ') + '.\nRetrouvez-les dans « Les Nouveautés » sur l\'accueil.';
