@@ -193,6 +193,7 @@
     fleche: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
     ancre: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><path d="M12 7v14M8 11h8M5 14a7 7 0 0 0 14 0"/></svg>',
     camion: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6h12v10H2zM14 9h4l3 3.5V16h-7z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>',
+    play: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z" fill="currentColor"/></svg>',
     coche: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>'
   };
 
@@ -1059,6 +1060,55 @@
   /** Ligne « libellé / valeur » du tableau de caractéristiques (masquée si valeur absente et facultative). */
   const ligneInfo = (label, valeur) => valeur == null ? '' : `<div class="spec"><dt>${label}</dt><dd>${valeur}</dd></div>`;
 
+  /** CBM d'un colis (m³) : cbmColis, sinon volume carton FOB. */
+  const cbmColis = p => p.cbmColis ?? p.fob?.volumeCarton ?? null;
+  const fmtCbm = v => v == null ? 'X m³' : v.toLocaleString('fr-FR', { maximumFractionDigits: 3 }) + '\u00a0m³';
+
+  /**
+   * Médias d'un produit, en nombre illimité :
+   * photos (chemins d'images), vidéos (.mp4/.webm du site, lues sur place ; autres liens ouverts dans un nouvel onglet).
+   */
+  function mediasProduit(p) {
+    const photos = p.photos?.length ? p.photos : (p.photo === false ? [] : [`images/produits/${encodeURIComponent(p.ref)}.jpg`]);
+    const medias = photos.map(src => ({ type: 'photo', src }));
+    (p.videos || []).forEach(v => medias.push({ type: /\.(mp4|webm|mov)(\?|$)/i.test(v.url) ? 'video' : 'lien', src: v.url, titre: v.titre || 'Vidéo' }));
+    return medias;
+  }
+
+  /** Affiche le média n° i dans la galerie de la fiche. */
+  function afficherMedia(medias, i, p) {
+    const m = medias[i];
+    const scene = $('#gal-stage');
+    if (!scene || !m) return;
+    scene.innerHTML = m.type === 'photo'
+      ? `<img src="${esc(m.src)}" alt="${esc(p.designation)} — photo ${i + 1}">`
+      : m.type === 'video'
+        ? `<video src="${esc(m.src)}" controls playsinline preload="metadata" aria-label="${esc(m.titre)}"></video>`
+        : `<a class="gal__link" href="${esc(m.src)}" target="_blank" rel="noopener">${ICONES.play}<strong>${esc(m.titre)}</strong><span>Ouvrir la vidéo</span></a>`;
+    document.querySelectorAll('[data-gal-i]').forEach(b => b.setAttribute('aria-current', +b.dataset.galI === i ? 'true' : 'false'));
+    const compteur = $('#gal-count');
+    if (compteur) compteur.textContent = `${i + 1} / ${medias.length}`;
+  }
+
+  function initGalerie(medias, p) {
+    if (!medias.length) return;
+    let i = 0;
+    const aller = k => { i = (k + medias.length) % medias.length; afficherMedia(medias, i, p); };
+    document.querySelectorAll('[data-gal-i]').forEach(b => b.addEventListener('click', () => aller(+b.dataset.galI)));
+    $('#gal-prev')?.addEventListener('click', () => aller(i - 1));
+    $('#gal-next')?.addEventListener('click', () => aller(i + 1));
+    const scene = $('#gal-stage');
+    let x0 = null;
+    scene.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+    scene.addEventListener('touchend', e => {
+      if (x0 == null) return;
+      const dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 40 && medias.length > 1) aller(i + (dx < 0 ? 1 : -1));
+      x0 = null;
+    });
+    aller(0);
+  }
+
   function pageProduit(ref) {
     const p = produitsParRef.get(ref);
     // Produit inconnu, ou masqué pour ce client (hors stock non permanent, FOB seulement sans autorisation)
@@ -1070,6 +1120,7 @@
     const enFob = enModeFob() && p.fob;
     const m = marge(p);
 
+    const medias = mediasProduit(p);
     const rendre = () => {
       // Disponibilité
       const dispo = p.fobSeulement ? { cls: 'fob', txt: 'Disponible uniquement en FOB' }
@@ -1096,14 +1147,24 @@
           </nav>
 
           <div class="pdp">
-            <div class="pdp__photo ${enRupture(p) ? 'is-rupture' : ''}">
-              ${p.exemple ? '<span class="badge badge--EX">EXEMPLE</span>'
-                : enRupture(p) ? '<span class="badge badge--RUPTURE">RUPTURE</span>'
-                : p.badge ? `<span class="badge badge--${esc(p.badge)}">${esc(p.badge)}</span>` : ''}
-              ${p.fob ? `<span class="port-tag">${ICONES.ancre}FOB ${esc(nomPort(p.fob.port))}</span>` : ''}
-              ${p.photo === false
-                ? `<div class="fob-nophoto">${ICONES.carton}<span>Photo à venir</span></div>`
-                : `<img src="images/produits/${encodeURIComponent(p.ref)}.jpg" alt="${esc(p.designation)}" width="700" height="700">`}
+            <div class="gal">
+              <div class="pdp__photo ${enRupture(p) ? 'is-rupture' : ''}">
+                ${p.exemple ? '<span class="badge badge--EX">EXEMPLE</span>'
+                  : enRupture(p) ? '<span class="badge badge--RUPTURE">RUPTURE</span>'
+                  : p.badge ? `<span class="badge badge--${esc(p.badge)}">${esc(p.badge)}</span>` : ''}
+                ${p.fob ? `<span class="port-tag">${ICONES.ancre}FOB ${esc(nomPort(p.fob.port))}</span>` : ''}
+                <div class="gal__stage" id="gal-stage">${medias.length ? '' : `<div class="fob-nophoto">${ICONES.carton}<span>Photo à venir</span></div>`}</div>
+                ${medias.length > 1 ? `
+                <button type="button" class="gal__nav gal__nav--prev" id="gal-prev" aria-label="Média précédent">${ICONES.chevron}</button>
+                <button type="button" class="gal__nav gal__nav--next" id="gal-next" aria-label="Média suivant">${ICONES.chevron}</button>
+                <span class="gal__count" id="gal-count"></span>` : ''}
+              </div>
+              ${medias.length > 1 ? `
+              <div class="gal__thumbs" role="group" aria-label="Photos et vidéos">
+                ${medias.map((m, k) => `<button type="button" class="gal__thumb ${m.type !== 'photo' ? 'gal__thumb--video' : ''}" data-gal-i="${k}" aria-label="${m.type === 'photo' ? 'Photo ' + (k + 1) : esc(m.titre)}">
+                  ${m.type === 'photo' ? `<img src="${esc(m.src)}" alt="" loading="lazy">` : `${ICONES.play}<small>${m.type === 'video' ? 'Vidéo' : 'Lien'}</small>`}
+                </button>`).join('')}
+              </div>` : ''}
             </div>
 
             <div class="pdp__info">
@@ -1128,6 +1189,9 @@
                 ${ligneInfo('Famille ERP', p.familleErp ? esc(p.familleErp) : null)}
                 ${ligneInfo('Colisage', `${fmtNb(p.piecesColis)} pces par colis`)}
                 ${ligneInfo('Palettisation', palettisation)}
+                ${ligneInfo('CBM colis', fmtCbm(cbmColis(p)))}
+                ${ligneInfo('CBM palette', cbmColis(p) != null && p.piecesPalette && p.piecesColis ? `${fmtCbm(cbmColis(p) * Math.round(p.piecesPalette / p.piecesColis))}<small>Volume des colis, hors support palette</small>` : null)}
+                ${ligneInfo('Dimensions colis', p.dimensionsColis ? `${p.dimensionsColis.l} × ${p.dimensionsColis.w} × ${p.dimensionsColis.h} cm` : null)}
                 ${!p.fobSeulement ? ligneInfo('Prix unitaire HT (colis)', `${prix(p.prixUnitaire)} / pce`) : ''}
                 ${!p.fobSeulement ? ligneInfo('Prix palette HT', p.paletteDisponible ? `${prix(prixPalette(p))} / pce` : 'Palette indisponible') : ''}
                 ${!p.fobSeulement ? ligneInfo(`Prix camion HT (${CONFIG.palettesParCamion} pal.)`, `${prix(p.prixCamion)} / pce`) : ''}
@@ -1145,8 +1209,27 @@
                 ${ligneInfo('MOQ', moqCartons(p) ? `${fmtNb(moqCartons(p))} ctn · ${fmtNb(p.piecesColis == null ? null : moqCartons(p) * p.piecesColis)} pces` : 'Sans minimum')}
                 ${ligneInfo("Prix conteneur 20' complet", `${prixUsd(p.fob.prixConteneur20)} / pce`)}
                 ${ligneInfo("Quantité 20' complet", `${fmtNb(cartons20(p))} ctn · ${fmtNb(p.piecesColis == null ? null : cartons20(p) * p.piecesColis)} pces`)}
-                ${ligneInfo('Volume carton', `${p.fob.volumeCarton.toLocaleString('fr-FR')} m³`)}
               </dl>` : ''}
+
+              ${p.documents?.length ? `
+              <h2 class="pdp__h2">Documents</h2>
+              <ul class="docs">
+                ${p.documents.map(d => `<li><a href="${esc(d.fichier)}" target="_blank" rel="noopener" class="doc">
+                  <span class="doc__type">${esc(d.type || 'DOC')}</span>
+                  <span class="doc__titre">${esc(d.titre)}<small>${esc(p.ref)}</small></span>
+                  <span class="doc__go">Ouvrir ${ICONES.fleche}</span>
+                </a></li>`).join('')}
+              </ul>` : ''}
+
+              ${(p.videos || []).length ? `
+              <h2 class="pdp__h2">Vidéos</h2>
+              <ul class="docs">
+                ${p.videos.map((v, k) => `<li><button type="button" class="doc" data-gal-i="${medias.findIndex(m => m.src === v.url)}">
+                  <span class="doc__type doc__type--video">${ICONES.play}</span>
+                  <span class="doc__titre">${esc(v.titre || 'Vidéo ' + (k + 1))}</span>
+                  <span class="doc__go">Voir ${ICONES.fleche}</span>
+                </button></li>`).join('')}
+              </ul>` : ''}
             </div>
           </div>
 
@@ -1157,8 +1240,8 @@
           </section>` : ''}
         </div>`;
     };
-    rerendreListe = rendre;
-    rendre();
+    rerendreListe = () => { rendre(); initGalerie(medias, p); };
+    rerendreListe();
   }
 
   /* ---------- Réassort Express ---------- */

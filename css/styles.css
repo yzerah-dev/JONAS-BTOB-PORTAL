@@ -757,6 +757,44 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
   .pdp__title { font-size: 38px; }
 }
 
+/* Galerie (photos et vidéos en nombre illimité) */
+.gal { display: grid; gap: 10px; align-self: start; min-width: 0; }
+.gal__stage { width: 100%; height: 100%; display: grid; place-items: center; }
+.gal__stage img, .gal__stage video { width: 100%; height: 100%; object-fit: contain; background: var(--blanc); }
+.gal__nav {
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid var(--bordure); background: var(--blanc); color: var(--noir); display: grid; place-items: center; font-size: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.08);
+}
+.gal__nav--prev { left: 10px; } .gal__nav--prev svg { transform: rotate(180deg); }
+.gal__nav--next { right: 10px; }
+.gal__count { position: absolute; bottom: 10px; right: 10px; z-index: 2; background: var(--noir); color: var(--blanc); font-size: 12px; font-weight: 800; padding: 4px 9px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+.gal__thumbs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; }
+.gal__thumb {
+  flex: none; width: 72px; height: 72px; padding: 0; border: 1.5px solid var(--bordure); border-radius: 12px; overflow: hidden;
+  background: var(--blanc); display: grid; place-items: center;
+}
+.gal__thumb img { width: 100%; height: 100%; object-fit: contain; }
+.gal__thumb[aria-current="true"] { border-color: var(--noir); box-shadow: 0 0 0 2px var(--noir) inset; }
+.gal__thumb--video { background: var(--noir); color: var(--blanc); gap: 0; font-size: 26px; }
+.gal__thumb--video small { font-size: 10px; font-weight: 800; }
+.gal__link { display: grid; justify-items: center; gap: 8px; color: var(--noir); font-size: 48px; text-align: center; padding: 20px; }
+.gal__link strong { font-size: 18px; } .gal__link span { font-size: 14px; color: var(--gris-texte); }
+@media (min-width: 900px) { .gal { position: sticky; top: calc(var(--minibar-h) + 70px); } .gal .pdp__photo { position: relative; top: auto; } }
+
+/* Documents et vidéos de la fiche */
+.docs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.doc {
+  width: 100%; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 14px; text-align: left;
+  border: 1.5px solid var(--bordure); border-radius: 14px; background: var(--blanc); color: var(--noir);
+}
+.doc:hover { border-color: var(--noir); }
+.doc__type { flex: none; width: 44px; height: 44px; border-radius: 10px; background: var(--rouge); color: var(--blanc); display: grid; place-items: center; font-weight: 900; font-size: 12px; }
+.doc__type--video { background: var(--noir); font-size: 22px; }
+.doc__titre { flex: 1; min-width: 0; font-weight: 800; }
+.doc__titre small { display: block; font-weight: 500; color: var(--gris-texte); font-size: 12px; }
+.doc__go { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; white-space: nowrap; }
+
 /* ---------- Pages simples (réassort, reliquats, import, compte) ---------- */
 .page-head { padding-top: 24px; }
 .page-head h1 { font-size: 32px; }

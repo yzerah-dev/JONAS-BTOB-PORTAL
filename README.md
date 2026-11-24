@@ -41,6 +41,17 @@ N'importe quel hébergement de fichiers statiques convient (Netlify, OVH, serveu
 - l'offre FOB (port, prix au MOQ, MOQ, prix et quantité 20' complet, volume carton) pour les clients autorisés ;
 - 4 produits du même rayon.
 
+**Médias, documents, CBM** (champs de `produits.json`, tous facultatifs) :
+
+- `photos` : liste illimitée de chemins d'images (ex. `["images/produits/12385.jpg", "images/produits/12385-2.jpg", …]`). Sans ce champ : `images/produits/<réf>.jpg`. Galerie avec miniatures, flèches, glisser du doigt et compteur.
+- `videos` : liste de `{ "titre", "url" }`. Un fichier `.mp4` / `.webm` du site est lu dans la galerie ; un lien YouTube / Vimeo s'ouvre dans un nouvel onglet.
+- `documents` : liste de `{ "titre", "fichier", "type" }` (fiche technique, FDS, certificat…).
+- `cbmColis` (m³ par colis) et `dimensionsColis` `{ "l", "w", "h" }` en cm. Le CBM palette est calculé (CBM colis × colis par palette). Pour les produits FOB, le CBM vient de `fob.volumeCarton`.
+
+Fiches produit PDF : `python3 tools/generer_fiches.py` régénère `docs/<réf>-fiche-produit.pdf` (sans prix) à partir de `produits.json`.
+
+Démo : photos d'ambiance du kit ajoutées sur 12385, 18885, JO077, MG076 ; `videos/12385-presentation.mp4` est un diaporama de démonstration fait avec les photos du kit.
+
 Données ERP reprises du connecteur Stock Jonas (stock arrêté au 27 octobre 2026) : `familleErp`, `stockDispo`, `cartonsParCouche`, `couches`, et EAN / colisage / palettisation manquants de MG073, JO013 et JCB031.
 
 ## Règles de calcul
