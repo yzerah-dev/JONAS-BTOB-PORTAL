@@ -99,7 +99,7 @@ svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2
 
 .icon-btn {
   width: 46px; height: 46px; display: grid; place-items: center;
-  border: 1px solid var(--bordure); border-radius: 14px; font-size: 22px;
+  border: 1px solid var(--bordure); border-radius: 14px; font-size: 22px; background: var(--blanc); color: var(--noir);
 }
 .icon-btn:hover { border-color: var(--noir); }
 .cart-btn {
@@ -138,7 +138,24 @@ svg { width: 1em; height: 1em; fill: none; stroke: currentColor; stroke-width: 2
 }
 
 /* ---------- 3. Menu des rayons ---------- */
-.rayons-nav { background: var(--noir); position: sticky; top: 0; z-index: 30; }
+.rayons-nav { background: var(--noir); position: sticky; top: 0; z-index: 30; transition: top .2s; }
+/* Quand la barre compacte est affichée, le menu des rayons se colle juste dessous */
+body.show-minibar .rayons-nav { top: var(--minibar-h); }
+
+/* ---------- Barre compacte (logo toujours visible au défilement) ---------- */
+:root { --minibar-h: 62px; }
+.minibar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40; height: var(--minibar-h);
+  background: var(--blanc); border-bottom: 1px solid var(--bordure);
+  transform: translateY(-100%); visibility: hidden;
+  transition: transform .2s ease-out, visibility 0s linear .2s;
+}
+body.show-minibar .minibar { transform: none; visibility: visible; transition: transform .2s ease-out; }
+.minibar__inner { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.minibar__logo img { width: 118px; height: auto; }
+.minibar .icon-btn, .minibar .cart-btn { height: 44px; }
+.minibar .icon-btn { width: 44px; }
+@media (min-width: 1024px) { :root { --minibar-h: 70px; } .minibar__logo img { width: 150px; } }
 .rayons-nav__list {
   list-style: none; margin: 0 auto; display: flex; gap: 4px;
   overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;

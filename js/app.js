@@ -222,6 +222,7 @@
     const { total: montant, aConfirmer } = totalPanier();
     const total = prix(montant) + ' HT';
     $('#cart-total-header').textContent = total;
+    $('#cart-total-mini').textContent = total;
     $('#cart-bar-total').textContent = total;
     $('#drawer-total').textContent = total;
     const { colis, palettes } = comptePanier();
@@ -917,6 +918,18 @@
 
     // Boutons flottants réduits à l'icône quand on défile (téléphone)
     window.addEventListener('scroll', () => document.body.classList.toggle('is-scrolled', window.scrollY > 300), { passive: true });
+
+    // Logo toujours visible : dès que le logo de l'en-tête sort de l'écran, la barre compacte apparaît
+    new IntersectionObserver(([e]) => {
+      const visible = !e.isIntersecting;
+      document.body.classList.toggle('show-minibar', visible);
+      $('#minibar').inert = !visible;
+    }).observe($('.header__logo'));
+    $('#minibar-cart').addEventListener('click', ouvrirTiroir);
+    $('#minibar-search').addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      $('#search-input').focus({ preventScroll: true });
+    });
 
     // WhatsApp
     $('#wa-link').href = `https://wa.me/${CONFIG.numeroWhatsApp}`;

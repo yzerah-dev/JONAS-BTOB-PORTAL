@@ -46,6 +46,27 @@
     </div>
   </header>
 
+  <!-- Barre compacte fixée en haut : le logo reste visible pendant le défilement -->
+  <div class="minibar" id="minibar" inert>
+    <div class="container minibar__inner">
+      <a href="#/" class="minibar__logo" aria-label="Jonas International — accueil">
+        <img src="images/logo/logo-jonas-noir.png" alt="Jonas International" width="900" height="255">
+      </a>
+      <div class="header__icons">
+        <button type="button" class="icon-btn" id="minibar-search" aria-label="Rechercher un produit">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </button>
+        <a href="#/compte" class="icon-btn" aria-label="Espace client">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+        </a>
+        <button type="button" class="cart-btn" id="minibar-cart" aria-label="Ouvrir le panier">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 12.2a1 1 0 0 1-1 .8H7.2a1 1 0 0 1-1-.8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+          <span id="cart-total-mini">0,00 € HT</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- 3. Menu des rayons (rempli par app.js) -->
   <nav class="rayons-nav" aria-label="Rayons">
     <ul class="container rayons-nav__list" id="rayons-nav"></ul>
