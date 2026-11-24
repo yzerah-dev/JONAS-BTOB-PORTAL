@@ -61,6 +61,17 @@ Sélecteur en haut de toutes les pages (dans l'en-tête, et dans la barre compac
 
 Champs ajoutés dans `produits.json` : `eligibleCamion` (désigné par Jonas ; activé pour la démo sur 12385, MG076, 18885, JO095, JO094, JO098), `prixCamion` (grille tarifaire à fournir ; vide = « prix à confirmer »), `palettesParCamion` (facultatif).
 
+## Panier
+
+Le panier montre la composition de tout ce qui est commandé :
+
+- **Au colis** ;
+- **À la palette**, avec le camion en cours de remplissage (palettes / 33, case par case) ;
+- **Trade Truck**, détail de chaque camion complet (33 palettes × pièces par palette) ;
+- **Conteneurs FOB**, un par port : taille, jauge en m³, MOQ, composition (cartons, m³, $), bouton « Réserver ce conteneur ».
+
+Le total en € HT couvre la commande en stock ; les conteneurs FOB sont totalisés à part, en dollars, et réservés séparément.
+
 ## Offre FOB
 
 Mode **FOB** dans l'en-tête. Le catalogue garde la même structure (rayons, sous-catégories, sélections, recherche, tri) ; en mode FOB :

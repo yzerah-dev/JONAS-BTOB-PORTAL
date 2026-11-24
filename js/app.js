@@ -293,17 +293,6 @@
     if (palettes) parts.push(libelleQuantite(palettes, 'palette'));
     if (camions) parts.push(libelleQuantite(camions, 'camion'));
 
-    // Remplissage camion (utile en Trade Pal) : palettes du panier / palettes par camion
-    const fill = $('#drawer-fill');
-    fill.hidden = !palettes;
-    if (palettes) {
-      const pleins = Math.floor(palettes / CONFIG.palettesParCamion);
-      const reste = palettes % CONFIG.palettesParCamion;
-      fill.querySelector('span').textContent = pleins
-        ? `${pleins} camion${pleins > 1 ? 's' : ''} plein${pleins > 1 ? 's' : ''} + ${reste} / ${CONFIG.palettesParCamion} palettes`
-        : `${reste} / ${CONFIG.palettesParCamion} palettes`;
-      fill.querySelector('i').style.width = `${(reste / CONFIG.palettesParCamion) * 100}%`;
-    }
     if (aConfirmer) parts.push(`${aConfirmer} prix à confirmer`);
     $('#cart-bar-count').textContent = parts.length ? parts.join(' · ') : 'Panier vide';
     $('#drawer-note').hidden = !aConfirmer;
@@ -327,30 +316,82 @@
     if (!$('#drawer').hidden) rendreTiroir();
   }
 
+  /**
+   * Panier : la composition de la commande, des camions et des conteneurs.
+   * - Au colis ;
+   * - À la palette, avec le remplissage du camion en cours (palettes / 33) ;
+   * - Camions complets (Trade Truck), détail de chaque camion ;
+   * - Conteneurs FOB, un par port, avec leur contenu (réservés séparément, en $).
+   */
+  function ligneTiroir([cle, qte]) {
+    const [ref, type] = cle.split('|');
+    const p = produitsParRef.get(ref);
+    const { nbPieces, pu } = unite(p, type);
+    const m = montantLigne(p, type, qte);
+    const detail = type === 'camion'
+      ? `${libelleQuantite(qte, 'camion')} × ${palettesCamion(p)} palettes · ${pieces(nbPieces)} pces × ${prix(pu)}`
+      : `${libelleQuantite(qte, type)} × ${pieces(nbPieces)} pces × ${prix(pu)}`;
+    return `
+      <div class="line">
+        <img src="images/produits/${encodeURIComponent(ref)}.jpg" alt="">
+        <div>
+          <p class="line__name">${esc(p.designation)}</p>
+          <p class="line__detail">${detail}</p>
+          <button type="button" class="line__remove" data-remove="${esc(cle)}">Retirer</button>
+        </div>
+        <div class="line__total">${m == null ? '<span class="line__tbc">Prix à<br>confirmer</span>' : prix(m)}</div>
+      </div>`;
+  }
+
+  function sectionTiroir(titre, contenu, sous = '') {
+    return `<section class="dsec"><h3 class="dsec__title">${titre}</h3>${sous ? `<p class="dsec__sub">${sous}</p>` : ''}${contenu}</section>`;
+  }
+
+  /** Jauge du camion en cours de remplissage avec les palettes du panier. */
+  function jaugeCamion(nbPalettes) {
+    const cap = CONFIG.palettesParCamion;
+    const pleins = Math.floor(nbPalettes / cap), reste = nbPalettes % cap;
+    return `
+      <div class="truck">
+        <div class="truck__head"><strong>${pleins ? `${pleins} camion${pleins > 1 ? 's' : ''} plein${pleins > 1 ? 's' : ''} + camion en cours` : 'Camion en cours'}</strong><span>${reste} / ${cap} palettes</span></div>
+        <div class="truck__bar">${Array.from({ length: cap }, (_, k) => `<i class="${k < reste ? 'on' : ''}"></i>`).join('')}</div>
+        <p class="dsec__sub">${reste ? `Encore ${cap - reste} palette${cap - reste > 1 ? 's' : ''} pour compléter le camion.` : 'Camion complet.'}</p>
+      </div>`;
+  }
+
   function rendreTiroir() {
     const corps = $('#drawer-body');
-    if (panier.size === 0) {
-      corps.innerHTML = '<div class="empty"><strong>Votre panier est vide</strong>Ajoutez des colis, des palettes ou un camion depuis le catalogue.</div>';
-      $('#checkout-btn').disabled = true;
+    const lignes = [...panier];
+    const parType = t => lignes.filter(([c]) => c.endsWith('|' + t));
+    const colis = parType('colis'), palettes = parType('palette'), camions = parType('camion');
+    const ports = data.fob.ports.map(p => p.id).filter(id => fob.conteneurs.get(id)?.lignes.size);
+    $('#checkout-btn').disabled = panier.size === 0;
+
+    // Montant FOB (en $, hors total €)
+    const totalFob = ports.reduce((t, id) => t + bilanConteneur(id).montant, 0);
+    $('#drawer-fob').hidden = !ports.length;
+    $('#drawer-fob').textContent = `+ ${ports.length} conteneur${ports.length > 1 ? 's' : ''} FOB · ${fmtUsd.format(totalFob)} (réservation séparée)`;
+
+    if (!lignes.length && !ports.length) {
+      corps.innerHTML = '<div class="empty"><strong>Votre panier est vide</strong>Ajoutez des colis, des palettes, un camion ou un conteneur FOB depuis le catalogue.</div>';
       return;
     }
-    $('#checkout-btn').disabled = false;
-    corps.innerHTML = [...panier].map(([cle, qte]) => {
-      const [ref, type] = cle.split('|');
-      const p = produitsParRef.get(ref);
-      const { nbPieces: nbPces, pu } = unite(p, type);
-      const m = montantLigne(p, type, qte);
-      return `
-        <div class="line">
-          <img src="images/produits/${encodeURIComponent(ref)}.jpg" alt="">
-          <div>
-            <p class="line__name">${esc(p.designation)}</p>
-            <p class="line__detail">${libelleQuantite(qte, type)} × ${pieces(nbPces)} pces × ${prix(pu)}</p>
-            <button type="button" class="line__remove" data-remove="${esc(cle)}">Retirer</button>
-          </div>
-          <div class="line__total">${m == null ? '<span class="line__tbc">Prix à<br>confirmer</span>' : prix(m)}</div>
-        </div>`;
-    }).join('');
+    let html = '';
+    if (colis.length) html += sectionTiroir('Au colis', colis.map(ligneTiroir).join(''));
+    if (palettes.length) {
+      const nb = palettes.reduce((t, [, q]) => t + q, 0);
+      html += sectionTiroir(`À la palette · ${libelleQuantite(nb, 'palette')}`, jaugeCamion(nb) + palettes.map(ligneTiroir).join(''));
+    }
+    if (camions.length) {
+      const nb = camions.reduce((t, [, q]) => t + q, 0);
+      html += sectionTiroir(`Trade Truck · ${libelleQuantite(nb, 'camion')}`, camions.map(ligneTiroir).join(''),
+        `1 camion = ${CONFIG.palettesParCamion} palettes d'un même produit.`);
+    }
+    if (ports.length) {
+      html += sectionTiroir(`Conteneurs FOB · ${ports.length}`, ports.map(panneauConteneur).join(''),
+        'Prix FOB en dollars US au départ du port. MOQ : 1 conteneur complet par port, réservé séparément.');
+    }
+    corps.innerHTML = html;
   }
 
   function ouvrirTiroir() {
@@ -636,10 +677,7 @@
             </label>
           </div>
         </div>
-        <div id="list-layout">
-          <div id="grid"></div>
-          <aside class="fob-aside" id="fob-panel" aria-live="polite" hidden></aside>
-        </div>
+        <div id="grid"></div>
       </div>`;
 
     const rendre = () => {
@@ -666,14 +704,11 @@
       // Filtre par port et colonne des conteneurs (mode FOB)
       $('#port-chips').hidden = !enFob;
       $('#port-chips').innerHTML = enFob ? pastillesPorts() : '';
-      $('#list-layout').className = enFob ? 'fob-layout' : '';
-      $('#fob-panel').hidden = !enFob;
-      $('#fob-panel').innerHTML = enFob ? panneauxFob() : '';
 
       if (TRIS[tri].fn) liste = [...liste].sort(TRIS[tri].fn);
       $('#count').textContent = `${liste.length} produit${liste.length > 1 ? 's' : ''}`;
       $('#grid').innerHTML = liste.length
-        ? `<div class="grid ${enFob ? 'grid--fob' : ''}">${liste.map(carteProduit).join('')}</div>`
+        ? `<div class="grid">${liste.map(carteProduit).join('')}</div>`
         : `<div class="empty"><strong>${
             enFob ? 'Aucun produit FOB ici' + (fob.portFiltre !== 'tous' ? ' pour ce port' : '')
             : modeAchat === 'camion' && o.produits.length ? 'Aucun produit éligible au camion complet ici'
@@ -884,23 +919,19 @@
         <p class="fob-panel__status">${b.complet
           ? `Conteneur complet : MOQ atteint (${seuil} % minimum).`
           : b.cartons ? `Encore ${fmtM3(reste)} pour atteindre le MOQ (${seuil} % du conteneur).` : `MOQ : 1 conteneur complet au départ de ${esc(nomPort(port))}.`}</p>
-        ${b.cartons ? `<details class="fob-lines"><summary>${b.c.lignes.size} référence${b.c.lignes.size > 1 ? 's' : ''} · ${b.cartons.toLocaleString('fr-FR')} cartons</summary>
-          ${[...b.c.lignes].map(([ref, n]) => { const p = produitsParRef.get(ref); return `<div><span>${esc(p.designation)}</span><span>${n} ctn · ${fmtM3(n * p.fob.volumeCarton)}</span></div>`; }).join('')}
-        </details>` : ''}
+        ${b.cartons ? `<div class="fob-lines">
+          <p class="fob-lines__head">Composition · ${b.c.lignes.size} référence${b.c.lignes.size > 1 ? 's' : ''} · ${b.cartons.toLocaleString('fr-FR')} cartons</p>
+          ${[...b.c.lignes].map(([ref, n]) => {
+            const p = produitsParRef.get(ref);
+            const montant = p.fob.prixFob != null && p.piecesColis != null ? fmtUsd.format(n * p.piecesColis * p.fob.prixFob) : 'X,XX $US';
+            return `<div class="fob-line">
+              <span><strong>${esc(p.designation)}</strong><small>${n.toLocaleString('fr-FR')} ctn × ${pieces(p.piecesColis)} pces · ${fmtM3(n * p.fob.volumeCarton)}</small></span>
+              <span class="fob-line__right">${montant}<button type="button" class="line__remove" data-fob-remove="${esc(ref)}">Retirer</button></span>
+            </div>`;
+          }).join('')}
+        </div>` : ''}
         <button type="button" class="btn btn--red btn--block" data-reserver="${port}" ${b.complet ? '' : 'disabled'}>Réserver ce conteneur</button>
       </div>`;
-  }
-
-  /** Colonne des conteneurs : celui du port filtré, ou tous les conteneurs commencés. */
-  function panneauxFob() {
-    const ports = fob.portFiltre !== 'tous'
-      ? [fob.portFiltre]
-      : data.fob.ports.map(p => p.id).filter(id => fob.conteneurs.get(id)?.lignes.size);
-    if (!ports.length) {
-      return `<div class="fob-panel"><p class="fob-panel__kicker">Conteneurs FOB</p>
-        <p class="fob-panel__status">Ajoutez des produits : un conteneur est créé automatiquement pour le port de départ de chaque produit. MOQ : 1 conteneur complet par port.</p></div>`;
-    }
-    return ports.map(panneauConteneur).join('');
   }
 
   /** Pastilles de filtre par port (mode FOB). */
@@ -915,6 +946,7 @@
   function majFob() {
     if (rerendreListe) rerendreListe();
     majBarreFob();
+    if (!$('#drawer').hidden) rendreTiroir();
   }
 
   function majBarreFob() {
@@ -932,9 +964,14 @@
   }
 
   function clicFob(e) {
-    const t = e.target.closest('[data-fob-step],[data-fob-fill],[data-port],[data-cont],[data-reserver]');
+    const t = e.target.closest('[data-fob-step],[data-fob-fill],[data-fob-remove],[data-port],[data-cont],[data-reserver]');
     if (!t || t.disabled) return false;
     if (t.dataset.fobStep) changerCartons(t.dataset.ref, +t.dataset.fobStep);
+    else if (t.dataset.fobRemove) {
+      const p = produitsParRef.get(t.dataset.fobRemove);
+      fob.conteneurs.get(p.fob.port)?.lignes.delete(p.ref);
+      majFob();
+    }
     else if (t.dataset.fobFill) changerCartons(t.dataset.fobFill, Infinity);
     else if (t.dataset.port) { fob.portFiltre = t.dataset.port; majFob(); }
     else if (t.dataset.cont) {
@@ -1254,10 +1291,11 @@
     // Panier
     $('#cart-btn').addEventListener('click', ouvrirTiroir);
     $('#cart-bar-btn').addEventListener('click', ouvrirTiroir);
-    $('#fob-bar-btn').addEventListener('click', () => $('#fob-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    $('#fob-bar-btn').addEventListener('click', ouvrirTiroir);
     $('#drawer-close').addEventListener('click', fermerTiroir);
     $('#drawer-overlay').addEventListener('click', fermerTiroir);
     $('#drawer-body').addEventListener('click', e => {
+      if (clicFob(e)) return;
       const cle = e.target.dataset.remove;
       if (!cle) return;
       panier.delete(cle);

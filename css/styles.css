@@ -601,7 +601,7 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
 .fob-panel.is-complet .fob-panel__status { color: var(--noir); }
 .fob-lines { font-size: 13px; border-top: 1px solid var(--bordure); padding-top: 8px; }
 .fob-lines summary { cursor: pointer; font-weight: 700; min-height: 32px; display: flex; align-items: center; }
-.fob-lines div { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--bordure); }
+.fob-lines > div { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--bordure); }
 .fob-lines div span:last-child { white-space: nowrap; color: var(--gris-texte); font-variant-numeric: tabular-nums; }
 .fob-bar__gauge { width: 140px; height: 5px; border-radius: 5px; background: rgba(255,255,255,.2); margin-top: 5px; overflow: hidden; }
 .fob-bar__gauge i { display: block; height: 100%; background: var(--jaune); }
@@ -635,6 +635,27 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
   .mode strong { font-size: 16px; }
   .mode small { font-size: 13px; }
 }
+
+/* Sections du panier : colis, palettes (camion en cours), camions, conteneurs FOB */
+.dsec { padding: 14px 0 6px; border-bottom: 1px solid var(--bordure); display: grid; gap: 6px; }
+.dsec:last-child { border-bottom: 0; }
+.dsec__title { font-size: 13px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.dsec__sub { font-size: 12.5px; color: var(--gris-texte); }
+.dsec .line:last-child { border-bottom: 0; }
+.truck { display: grid; gap: 6px; padding: 10px 12px; border-radius: 14px; background: var(--noir); color: var(--blanc); }
+.truck .dsec__sub { color: rgba(255,255,255,.7); }
+.truck__head { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.truck__bar { display: grid; grid-template-columns: repeat(33, 1fr); gap: 2px; }
+.truck__bar i { height: 14px; border-radius: 2px; background: rgba(255,255,255,.18); }
+.truck__bar i.on { background: var(--jaune); }
+.drawer .fob-panel { padding: 14px; }
+.drawer .fob-panel__title { font-size: 20px; }
+.fob-lines__head { font-weight: 800; font-size: 12.5px; }
+.fob-line { align-items: center; }
+.fob-line span:first-child { display: grid; gap: 2px; min-width: 0; }
+.fob-line small { color: var(--gris-texte); font-size: 12px; }
+.fob-line__right { display: grid; justify-items: end; font-weight: 800; white-space: nowrap; }
+.fob-line .line__remove { min-height: 28px; padding: 2px 0; }
 
 /* Jauge de remplissage camion dans le panier */
 .drawer__fill { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
@@ -719,3 +740,4 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+.fob-lines .fob-line .fob-line__right { color: var(--noir); }
