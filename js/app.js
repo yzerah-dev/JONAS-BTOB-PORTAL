@@ -20,6 +20,8 @@
     coefPalette: 0.95,
     // Camion complet : nombre de palettes par camion (semi-remorque 13,6 m), sauf valeur propre au produit.
     palettesParCamion: 33,
+    // Mode Trade Truck (camion complet) : désactivé pour l'instant. Passer à true pour le réafficher.
+    tradeTruckActif: false,
     // TVA utilisée pour calculer la marge à partir du PVC TTC.
     tva: 0.20,
     // Durée d'affichage de chaque visuel du carrousel (ms).
@@ -127,7 +129,7 @@
    */
   function peutAjouter(p, type) {
     if (p.enStock === false) return false;
-    if (type === 'camion') return !!p.eligibleCamion;
+    if (type === 'camion') return CONFIG.tradeTruckActif && !!p.eligibleCamion;
     return type === 'colis' || p.paletteDisponible;
   }
 
@@ -448,7 +450,7 @@
   function selecteurMode() {
     return `
       <div class="modes" role="radiogroup" aria-label="Mode d'achat">
-        ${Object.entries(MODES).map(([id, m]) => `
+        ${Object.entries(MODES).filter(([id]) => id !== 'camion' || CONFIG.tradeTruckActif).map(([id, m]) => `
           <button type="button" role="radio" class="mode ${id === 'fob' && !fobAutorise() ? 'is-locked' : ''}" data-mode="${id}" aria-checked="${id === modeAchat}">
             <strong>${esc(m.titre)}</strong><small>${id === 'fob' && !fobAutorise() ? 'Sur autorisation' : esc(m.sous)}</small>
           </button>`).join('')}
@@ -467,6 +469,7 @@
 
   function changerMode(id) {
     if (!MODES[id] || id === modeAchat) return;
+    if (id === 'camion' && !CONFIG.tradeTruckActif) return;
     if (id === 'fob' && !fobAutorise()) { toast('Offre FOB sur autorisation : contactez votre commercial'); return; }
     appliquerMode(id);
     toast(`Mode ${MODES[id].titre}`);

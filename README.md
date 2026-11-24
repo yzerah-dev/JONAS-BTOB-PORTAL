@@ -57,7 +57,7 @@ Sélecteur en haut de toutes les pages (dans l'en-tête, et dans la barre compac
 
 - **Standard** : au colis ou à la palette, cartes avec les deux blocs.
 - **Trade Pal** : achat à la palette uniquement. Seul le bloc palette est affiché, et les produits en rupture palette sont masqués. Le panier montre le remplissage du camion (palettes / 33).
-- **Trade Truck** (camion complet, MOQ 1 camion) : seuls les produits `eligibleCamion: true` sont affichés. 1 camion = `palettesParCamion` palettes (33 par défaut, `CONFIG.palettesParCamion`) × pièces par palette, au prix `prixCamion`.
+- **Trade Truck** (désactivé pour l'instant : `CONFIG.tradeTruckActif = false`, le code reste en place) (camion complet, MOQ 1 camion) : seuls les produits `eligibleCamion: true` sont affichés. 1 camion = `palettesParCamion` palettes (33 par défaut, `CONFIG.palettesParCamion`) × pièces par palette, au prix `prixCamion`.
 
 Champs ajoutés dans `produits.json` : `eligibleCamion` (désigné par Jonas ; activé pour la démo sur 12385, MG076, 18885, JO095, JO094, JO098), `prixCamion` (grille tarifaire à fournir ; vide = « prix à confirmer »), `palettesParCamion` (facultatif).
 

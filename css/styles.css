@@ -615,7 +615,7 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
 @media (min-width: 1320px) { .grid--fob { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* ---------- Sélecteur de mode d'achat ---------- */
-.modes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 16px; }
+.modes { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; margin-top: 16px; }
 .mode {
   min-height: 52px; padding: 6px 10px; border-radius: 16px; border: 1.5px solid var(--bordure);
   background: var(--blanc); text-align: left; display: flex; flex-direction: column; justify-content: center; gap: 2px;
