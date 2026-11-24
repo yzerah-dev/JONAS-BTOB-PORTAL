@@ -560,6 +560,16 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
 .buy--single .stepper { grid-template-columns: 52px 1fr 52px; height: 52px; }
 .buy--single .stepper button { width: 52px; height: 52px; }
 
+/* Trade Pal : deux niveaux de prix (palette, camion) */
+.tiers { display: grid; gap: 6px; }
+.tier { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; }
+.tier + .tier { border-top: 1px solid rgba(255,255,255,.18); }
+.tier__label { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; line-height: 1.15; }
+.tier__label svg { font-size: 24px; flex: none; stroke-width: 1.8; }
+.tier__label small { display: block; font-size: 12px; font-weight: 600; opacity: .7; }
+.tier .buy__price { font-size: 22px; }
+.tier--camion .buy__price { color: var(--jaune); }
+
 /* ---------- Offre FOB ---------- */
 .badge--EX { background: var(--blanc); color: var(--noir); border: 1.5px solid var(--noir); }
 .card__photo--fob { aspect-ratio: 16 / 10; }

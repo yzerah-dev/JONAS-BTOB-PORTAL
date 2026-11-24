@@ -245,12 +245,24 @@
             </div>` : ''}
             ${modeAchat !== 'camion' ? `
             <div class="buy__block buy__block--palette">
+              ${modeAchat === 'tradepal' && !ruptPalette ? `
+              <!-- Trade Pal : prix à la palette et prix au camion complet (${CONFIG.palettesParCamion} palettes) -->
+              <div class="tiers">
+                <div class="tier">
+                  <span class="tier__label">${ICONES.palette}<span>À la palette<small>${pieces(p.piecesPalette)} pces</small></span></span>
+                  <span class="buy__price">${prix(pPal)}<small>/pce</small></span>
+                </div>
+                <div class="tier tier--camion">
+                  <span class="tier__label">${ICONES.camion}<span>Au camion<small>${palettesCamion(p)} pal. · ${pieces(piecesCamion(p))} pces</small></span></span>
+                  <span class="buy__price">${prix(p.prixCamion)}<small>/pce</small></span>
+                </div>
+              </div>` : `
               <div class="buy__head">
                 <span class="buy__qty" title="Palette">${ICONES.palette}<span>${pieces(p.piecesPalette)} <small>pces</small></span></span>
                 ${ruptPalette
                   ? '<span class="buy__note">Rupture</span>'
                   : `<span class="buy__price">${prix(pPal)}<small>/pce</small></span>`}
-              </div>
+              </div>`}
               <span class="sr-only">Palette de ${pieces(p.piecesPalette)} pièces${ruptPalette ? ', en rupture' : ''}</span>
               ${stepper(p, 'palette')}
             </div>` : `
