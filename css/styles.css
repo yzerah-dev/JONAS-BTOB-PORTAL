@@ -278,7 +278,7 @@ main { display: block; padding-bottom: 48px; outline: none; }
 .action__sub { color: rgba(255,255,255,.72); font-size: 14px; }
 .action--wide .action__chev { margin-left: auto; font-size: 20px; }
 @media (min-width: 1024px) {
-  .actions { grid-template-columns: 2fr 1fr 1fr; }
+  .actions { grid-template-columns: 1fr 1fr; }
   .action--wide { grid-column: auto; }
   .action { min-height: 120px; padding: 24px; }
   .action__title { font-size: 20px; }

@@ -556,11 +556,6 @@
 
         <!-- Cartes d'action -->
         <div class="actions">
-          <a href="#/catalogue" class="action action--wide">
-            <span class="action__icon">${ICONES.panier}</span>
-            <span><span class="action__title">Je commande</span><br><span class="action__sub">Parcourir le catalogue</span></span>
-            <span class="action__chev">${ICONES.chevron}</span>
-          </a>
           <a href="#/reassort" class="action action--red">
             <span class="action__icon">${ICONES.reassort}</span>
             <span class="action__title">Réassort Express</span>
