@@ -528,6 +528,47 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
   .stepper { grid-template-columns: 44px 1fr 44px; }
 }
 
+/* Bloc camion complet (jaune, texte noir) et cartes à un seul bloc (Trade Pal, Camion) */
+.buy__block--camion { background: var(--jaune); color: var(--noir); }
+.buy__block--camion .buy__price { font-size: 24px; }
+.buy__block--camion .stepper .minus { background: rgba(17,17,17,.12); color: var(--noir); }
+.buy__block--camion .stepper .plus { background: var(--noir); }
+.buy.buy--single { grid-template-columns: 1fr; }
+.buy--single .buy__head { flex-direction: row; align-items: center; }
+.buy--single .stepper { grid-template-columns: 52px 1fr 52px; height: 52px; }
+.buy--single .stepper button { width: 52px; height: 52px; }
+
+/* ---------- Sélecteur de mode d'achat ---------- */
+.modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+.mode {
+  min-height: 60px; padding: 8px 10px; border-radius: 16px; border: 1.5px solid var(--bordure);
+  background: var(--blanc); text-align: left; display: flex; flex-direction: column; justify-content: center; gap: 2px;
+}
+.mode strong { font-size: 14px; font-weight: 900; line-height: 1.15; }
+.mode small { font-size: 11.5px; color: var(--gris-texte); font-weight: 600; line-height: 1.2; }
+.mode:hover { border-color: var(--noir); }
+.mode[aria-checked="true"] { background: var(--noir); border-color: var(--noir); color: var(--blanc); }
+.mode[aria-checked="true"] small { color: rgba(255,255,255,.75); }
+.mode[data-mode="camion"][aria-checked="true"] { background: var(--jaune); border-color: var(--jaune); color: var(--noir); }
+.mode[data-mode="camion"][aria-checked="true"] small { color: var(--noir); }
+.mode-section { margin-top: 26px; }
+.mode-section__title { font-size: 20px; }
+.mode-section .modes { margin-top: 10px; }
+.mode-note { margin-top: 10px; font-size: 13.5px; font-weight: 600; color: var(--gris-texte); }
+@media (min-width: 720px) {
+  .modes { gap: 12px; max-width: 760px; }
+  .mode { min-height: 66px; padding: 10px 16px; }
+  .mode strong { font-size: 16px; }
+  .mode small { font-size: 13px; }
+}
+
+/* Jauge de remplissage camion dans le panier */
+.drawer__fill { display: grid; gap: 6px; font-size: 13px; font-weight: 700; }
+.drawer__fill-head { display: flex; justify-content: space-between; gap: 8px; }
+.drawer__fill-head span { color: var(--gris-texte); font-weight: 600; }
+.drawer__fill-bar { height: 8px; border-radius: 8px; background: #EFEFEF; overflow: hidden; }
+.drawer__fill-bar i { display: block; height: 100%; background: var(--jaune); border-radius: 8px; transition: width .25s; }
+
 /* ---------- Barre panier fixe (téléphone) ---------- */
 .cart-bar {
   position: fixed; left: 10px; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); z-index: 55;

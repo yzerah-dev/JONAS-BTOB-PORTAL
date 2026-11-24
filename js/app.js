@@ -18,6 +18,8 @@
     numeroWhatsApp: '[NUMÉRO]',
     // Remise palette : prix palette = prix colis unitaire × 0,95.
     coefPalette: 0.95,
+    // Camion complet : nombre de palettes par camion (semi-remorque 13,6 m), sauf valeur propre au produit.
+    palettesParCamion: 33,
     // TVA utilisée pour calculer la marge à partir du PVC TTC.
     tva: 0.20,
     // Durée d'affichage de chaque visuel du carrousel (ms).
@@ -42,7 +44,21 @@
   /* ---------- État de l'application ---------- */
   let data = null;               // contenu de produits.json
   let produitsParRef = new Map(); // accès rapide par référence
-  const panier = new Map();      // clé « REF|colis » ou « REF|palette » → quantité
+  const panier = new Map();      // clé « REF|colis », « REF|palette » ou « REF|camion » → quantité
+  let rerendreListe = null;      // redessine la liste affichée (après un changement de mode)
+
+  /**
+   * Modes d'achat :
+   * - standard : au colis ou à la palette ;
+   * - tradepal : uniquement à la palette ;
+   * - camion   : uniquement au camion complet (MOQ 1 camion), produits éligibles seulement.
+   */
+  const MODES = {
+    standard: { titre: 'Colis & palette', sous: 'Commande libre' },
+    tradepal: { titre: 'Trade Pal', sous: 'Palette uniquement' },
+    camion: { titre: 'Camion complet', sous: 'MOQ 1 camion' }
+  };
+  let modeAchat = 'standard';
   let minuterieCarrousel = null;
 
   const $ = (sel, root = document) => root.querySelector(sel);
@@ -70,6 +86,21 @@
     return Math.round(centimes * CONFIG.coefPalette) / 100;
   }
 
+  /** Camion complet : palettes par camion et pièces par camion. */
+  function palettesCamion(p) {
+    return p.palettesParCamion ?? CONFIG.palettesParCamion;
+  }
+  function piecesCamion(p) {
+    return p.piecesPalette == null ? null : palettesCamion(p) * p.piecesPalette;
+  }
+
+  /** Pièces et prix unitaire d'une unité de vente (colis, palette ou camion). */
+  function unite(p, type) {
+    if (type === 'colis') return { nbPieces: p.piecesColis, pu: p.prixUnitaire };
+    if (type === 'palette') return { nbPieces: p.piecesPalette, pu: prixPalette(p) };
+    return { nbPieces: piecesCamion(p), pu: p.prixCamion ?? null };
+  }
+
   /** Marge magasin (%) = (PVC HT − prix d'achat) / PVC HT. */
   function marge(p) {
     if (p.pvc == null || p.prixUnitaire == null) return null;
@@ -83,13 +114,13 @@
    * manque reste commandable : sa ligne est marquée « prix à confirmer ».
    */
   function peutAjouter(p, type) {
+    if (type === 'camion') return !!p.eligibleCamion;
     return type === 'colis' || p.paletteDisponible;
   }
 
   /** Montant d'une ligne de panier, ou null si le prix ou le nombre de pièces manque. */
   function montantLigne(p, type, qte) {
-    const nbPieces = type === 'colis' ? p.piecesColis : p.piecesPalette;
-    const pu = type === 'colis' ? p.prixUnitaire : prixPalette(p);
+    const { nbPieces, pu } = unite(p, type);
     if (nbPieces == null || pu == null) return null;
     return qte * nbPieces * pu;
   }
@@ -109,15 +140,18 @@
   }
 
   function comptePanier() {
-    let colis = 0, palettes = 0;
+    let colis = 0, palettes = 0, camions = 0;
     for (const [cle, qte] of panier) {
-      if (cle.endsWith('|colis')) colis += qte; else palettes += qte;
+      if (cle.endsWith('|colis')) colis += qte;
+      else if (cle.endsWith('|palette')) palettes += qte;
+      else camions += qte;
     }
-    return { colis, palettes };
+    return { colis, palettes, camions };
   }
 
   function libelleQuantite(qte, type) {
     if (type === 'colis') return `${qte} colis`;
+    if (type === 'camion') return `${qte} camion${qte > 1 ? 's' : ''}`;
     return `${qte} palette${qte > 1 ? 's' : ''}`;
   }
 
@@ -142,6 +176,7 @@
     excel: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5"/><path d="m9 14 2 2 4-4"/></svg>',
     chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>',
     fleche: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    camion: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6h12v10H2zM14 9h4l3 3.5V16h-7z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>',
     coche: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>'
   };
 
@@ -151,7 +186,7 @@
   function stepper(p, type) {
     const qte = panier.get(`${p.ref}|${type}`) || 0;
     const ok = peutAjouter(p, type);
-    const nom = type === 'colis' ? 'colis' : 'palette';
+    const nom = type;
     return `
       <div class="stepper">
         <button type="button" class="minus" data-step="-1" data-ref="${esc(p.ref)}" data-type="${type}"
@@ -179,7 +214,8 @@
           <p class="card__ref">${refEan}</p>
           <p class="card__pvc">PVC ${prix(p.pvc)} <span>·</span> Marge ${m == null ? 'X' : m.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}&nbsp;%</p>
 
-          <div class="buy">
+          <div class="buy ${modeAchat === 'standard' ? '' : 'buy--single'}">
+            ${modeAchat === 'standard' ? `
             <div class="buy__block buy__block--colis">
               <div class="buy__head">
                 <span class="buy__qty" title="Colis">${ICONES.carton}<span>${pieces(p.piecesColis)} <small>pces</small></span></span>
@@ -187,7 +223,8 @@
               </div>
               <span class="sr-only">Colis de ${pieces(p.piecesColis)} pièces</span>
               ${stepper(p, 'colis')}
-            </div>
+            </div>` : ''}
+            ${modeAchat !== 'camion' ? `
             <div class="buy__block buy__block--palette">
               <div class="buy__head">
                 <span class="buy__qty" title="Palette">${ICONES.palette}<span>${pieces(p.piecesPalette)} <small>pces</small></span></span>
@@ -197,7 +234,15 @@
               </div>
               <span class="sr-only">Palette de ${pieces(p.piecesPalette)} pièces${ruptPalette ? ', en rupture' : ''}</span>
               ${stepper(p, 'palette')}
-            </div>
+            </div>` : `
+            <div class="buy__block buy__block--camion">
+              <div class="buy__head">
+                <span class="buy__qty" title="Camion complet">${ICONES.camion}<span>${palettesCamion(p)} <small>pal.</small> · ${pieces(piecesCamion(p))} <small>pces</small></span></span>
+                <span class="buy__price">${prix(p.prixCamion)}<small>/pce</small></span>
+              </div>
+              <span class="sr-only">Camion complet de ${palettesCamion(p)} palettes, ${pieces(piecesCamion(p))} pièces</span>
+              ${stepper(p, 'camion')}
+            </div>`}
           </div>
         </div>
       </article>`;
@@ -225,10 +270,23 @@
     $('#cart-total-mini').textContent = total;
     $('#cart-bar-total').textContent = total;
     $('#drawer-total').textContent = total;
-    const { colis, palettes } = comptePanier();
+    const { colis, palettes, camions } = comptePanier();
     const parts = [];
     if (colis) parts.push(libelleQuantite(colis, 'colis'));
     if (palettes) parts.push(libelleQuantite(palettes, 'palette'));
+    if (camions) parts.push(libelleQuantite(camions, 'camion'));
+
+    // Remplissage camion (utile en Trade Pal) : palettes du panier / palettes par camion
+    const fill = $('#drawer-fill');
+    fill.hidden = !palettes;
+    if (palettes) {
+      const pleins = Math.floor(palettes / CONFIG.palettesParCamion);
+      const reste = palettes % CONFIG.palettesParCamion;
+      fill.querySelector('span').textContent = pleins
+        ? `${pleins} camion${pleins > 1 ? 's' : ''} plein${pleins > 1 ? 's' : ''} + ${reste} / ${CONFIG.palettesParCamion} palettes`
+        : `${reste} / ${CONFIG.palettesParCamion} palettes`;
+      fill.querySelector('i').style.width = `${(reste / CONFIG.palettesParCamion) * 100}%`;
+    }
     if (aConfirmer) parts.push(`${aConfirmer} prix à confirmer`);
     $('#cart-bar-count').textContent = parts.length ? parts.join(' · ') : 'Panier vide';
     $('#drawer-note').hidden = !aConfirmer;
@@ -237,7 +295,7 @@
     // Sélecteurs des cartes visibles
     const refs = ref ? [ref] : [...produitsParRef.keys()];
     refs.forEach(r => {
-      ['colis', 'palette'].forEach(type => {
+      ['colis', 'palette', 'camion'].forEach(type => {
         const qte = panier.get(`${r}|${type}`) || 0;
         document.querySelectorAll(`output[data-qte="${CSS.escape(r + '|' + type)}"]`).forEach(o => {
           o.textContent = qte;
@@ -255,7 +313,7 @@
   function rendreTiroir() {
     const corps = $('#drawer-body');
     if (panier.size === 0) {
-      corps.innerHTML = '<div class="empty"><strong>Votre panier est vide</strong>Ajoutez des colis ou des palettes depuis le catalogue.</div>';
+      corps.innerHTML = '<div class="empty"><strong>Votre panier est vide</strong>Ajoutez des colis, des palettes ou un camion depuis le catalogue.</div>';
       $('#checkout-btn').disabled = true;
       return;
     }
@@ -263,8 +321,7 @@
     corps.innerHTML = [...panier].map(([cle, qte]) => {
       const [ref, type] = cle.split('|');
       const p = produitsParRef.get(ref);
-      const pu = type === 'colis' ? p.prixUnitaire : prixPalette(p);
-      const nbPces = type === 'colis' ? p.piecesColis : p.piecesPalette;
+      const { nbPieces: nbPces, pu } = unite(p, type);
       const m = montantLigne(p, type, qte);
       return `
         <div class="line">
@@ -329,6 +386,33 @@
     { nom: 'KYUFI', sous: 'Thés', cls: 'ky', filtre: 'Kyufi' }
   ];
 
+  /* ---------- Sélecteur de mode d'achat ---------- */
+  function selecteurMode() {
+    return `
+      <div class="modes" role="radiogroup" aria-label="Mode d'achat">
+        ${Object.entries(MODES).map(([id, m]) => `
+          <button type="button" role="radio" class="mode" data-mode="${id}" aria-checked="${id === modeAchat}">
+            <strong>${esc(m.titre)}</strong><small>${id === 'camion' ? `MOQ 1 camion · ${CONFIG.palettesParCamion} pal.` : esc(m.sous)}</small>
+          </button>`).join('')}
+      </div>`;
+  }
+
+  function changerMode(id) {
+    if (!MODES[id] || id === modeAchat) return;
+    modeAchat = id;
+    document.body.dataset.mode = id;
+    document.querySelectorAll('.mode').forEach(b => b.setAttribute('aria-checked', b.dataset.mode === id ? 'true' : 'false'));
+    if (rerendreListe) rerendreListe();
+    toast(`Mode ${MODES[id].titre}`);
+  }
+
+  /** Produits visibles selon le mode d'achat. */
+  function filtrerParMode(liste) {
+    if (modeAchat === 'tradepal') return liste.filter(p => p.paletteDisponible);
+    if (modeAchat === 'camion') return liste.filter(p => p.eligibleCamion);
+    return liste;
+  }
+
   /* ---------- Accueil ---------- */
   function pageAccueil() {
     const c = data.client;
@@ -389,6 +473,12 @@
             <span class="action__sub">Références → panier</span>
           </a>
         </div>
+
+        <!-- Mode d'achat -->
+        <section class="mode-section" aria-labelledby="mode-titre">
+          <h2 id="mode-titre" class="mode-section__title">Comment achetez-vous ?</h2>
+          ${selecteurMode()}
+        </section>
 
         <!-- Points de confiance -->
         <ul class="trust">
@@ -495,6 +585,8 @@
     app.innerHTML = `
       <div class="container">
         ${o.bandeau}
+        ${selecteurMode()}
+        <p class="mode-note" id="mode-note" hidden></p>
         <div class="toolbar">
           ${o.sousCategories.length ? `<div class="chips" role="group" aria-label="Sous-catégories">
             ${['Tout', ...o.sousCategories].map(s => `<button type="button" class="chip" data-sc="${esc(s)}" aria-pressed="${s === sc}">${esc(s)}</button>`).join('')}
@@ -510,13 +602,19 @@
       </div>`;
 
     const rendre = () => {
-      let liste = o.produits.filter(p => sc === 'Tout' || p.sousCategorie === sc);
+      let liste = filtrerParMode(o.produits).filter(p => sc === 'Tout' || p.sousCategorie === sc);
+      const note = $('#mode-note');
+      note.hidden = modeAchat === 'standard';
+      note.textContent = modeAchat === 'tradepal'
+        ? 'Trade Pal : achat à la palette uniquement. Produits en rupture palette masqués.'
+        : `Camion complet : ${CONFIG.palettesParCamion} palettes d'un même produit. Seuls les produits éligibles sont affichés.`;
       if (TRIS[tri].fn) liste = [...liste].sort(TRIS[tri].fn);
       $('#count').textContent = `${liste.length} produit${liste.length > 1 ? 's' : ''}`;
       $('#grid').innerHTML = liste.length
         ? `<div class="grid">${liste.map(carteProduit).join('')}</div>`
-        : `<div class="empty"><strong>${o.vide || 'Aucun produit pour le moment'}</strong>Votre commercial peut vous renseigner sur les prochains arrivages.</div>`;
+        : `<div class="empty"><strong>${modeAchat === 'camion' && o.produits.length ? 'Aucun produit éligible au camion complet ici' : (o.vide || 'Aucun produit pour le moment')}</strong>Votre commercial peut vous renseigner sur les prochains arrivages.</div>`;
     };
+    rerendreListe = rendre;
 
     app.querySelectorAll('.chip').forEach(b => b.addEventListener('click', () => {
       sc = b.dataset.sc;
@@ -716,11 +814,11 @@
       if (!code) return;
       const qte = parseInt(qteTxt, 10);
       if (!Number.isFinite(qte)) return; // ligne d'en-tête ou vide
-      const type = /pal/i.test(typeTxt || '') ? 'palette' : 'colis';
+      const type = /cam/i.test(typeTxt || '') ? 'camion' : /pal/i.test(typeTxt || '') ? 'palette' : 'colis';
       const p = produitsParRef.get(code.toUpperCase()) || produitsParRef.get(code) || data.produits.find(x => x.ean === code);
       if (!p) { rapport.push(`<p class="ko">✗ ${esc(code)} : référence inconnue</p>`); return; }
       if (qte <= 0) return;
-      if (!peutAjouter(p, type)) { rapport.push(`<p class="ko">✗ ${esc(p.ref)} : palette en rupture</p>`); return; }
+      if (!peutAjouter(p, type)) { rapport.push(`<p class="ko">✗ ${esc(p.ref)} : ${type === 'camion' ? 'non éligible au camion complet' : 'palette en rupture'}</p>`); return; }
       changerQuantite(p.ref, type, qte, { silencieux: true });
       ajouts++;
       rapport.push(`<p>✓ ${libelleQuantite(qte, type)} · ${esc(p.designation)}</p>`);
@@ -764,6 +862,7 @@
   function router() {
     clearInterval(minuterieCarrousel);
     if (!$('#drawer').hidden) fermerTiroir();
+    rerendreListe = null;
     const brut = location.hash.replace(/^#/, '') || '/';
     const [chemin, qs] = brut.split('?');
     const params = new URLSearchParams(qs || '');
@@ -881,6 +980,8 @@
   function initEvenements() {
     // Boutons − / + des cartes (délégation)
     app.addEventListener('click', e => {
+      const m = e.target.closest('button[data-mode]');
+      if (m) return changerMode(m.dataset.mode);
       const b = e.target.closest('button[data-step]');
       if (b && !b.disabled) changerQuantite(b.dataset.ref, b.dataset.type, +b.dataset.step);
     });

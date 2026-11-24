@@ -38,6 +38,16 @@ N'importe quel hébergement de fichiers statiques convient (Netlify, OVH, serveu
 - Donnée manquante (`null` dans `produits.json`) : affichage « X,XX € » / « X pces ». Le produit reste commandable ; sa ligne est marquée « prix à confirmer » et n'entre pas dans le total.
 - `paletteDisponible: false` : le + palette est désactivé (« Rupture »).
 
+## Modes d'achat
+
+Sélecteur sur l'accueil et en haut de chaque liste de produits :
+
+- **Colis & palette** : commande libre, cartes avec les deux blocs.
+- **Trade Pal** : achat à la palette uniquement. Seul le bloc palette est affiché, et les produits en rupture palette sont masqués. Le panier montre le remplissage du camion (palettes / 33).
+- **Camion complet** (MOQ 1 camion) : seuls les produits `eligibleCamion: true` sont affichés. 1 camion = `palettesParCamion` palettes (33 par défaut, `CONFIG.palettesParCamion`) × pièces par palette, au prix `prixCamion`.
+
+Champs ajoutés dans `produits.json` : `eligibleCamion` (désigné par Jonas ; activé pour la démo sur 12385, MG076, 18885, JO095, JO094, JO098), `prixCamion` (grille tarifaire à fournir ; vide = « prix à confirmer »), `palettesParCamion` (facultatif).
+
 ## À compléter / brancher
 
 - `produits.json` : les champs `null` (prix, EAN, pièces par palette…). À régénérer chaque soir à 20 h depuis l'ERP.
