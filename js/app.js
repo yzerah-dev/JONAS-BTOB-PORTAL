@@ -77,27 +77,35 @@
     return ((pvcHT - p.prixUnitaire) / pvcHT) * 100;
   }
 
-  /** Le produit peut-il être ajouté au colis / à la palette ? */
+  /**
+   * Le produit peut-il être ajouté au colis / à la palette ?
+   * Seule la rupture palette bloque l'ajout. Un produit dont le prix ou le colisage
+   * manque reste commandable : sa ligne est marquée « prix à confirmer ».
+   */
   function peutAjouter(p, type) {
-    if (p.prixUnitaire == null) return false;
-    if (type === 'colis') return p.piecesColis != null;
-    return p.paletteDisponible && p.piecesPalette != null;
+    return type === 'colis' || p.paletteDisponible;
   }
 
-  /** Montant d'une ligne de panier. */
+  /** Montant d'une ligne de panier, ou null si le prix ou le nombre de pièces manque. */
   function montantLigne(p, type, qte) {
-    if (type === 'colis') return qte * p.piecesColis * p.prixUnitaire;
-    return qte * p.piecesPalette * prixPalette(p);
+    const nbPieces = type === 'colis' ? p.piecesColis : p.piecesPalette;
+    const pu = type === 'colis' ? p.prixUnitaire : prixPalette(p);
+    if (nbPieces == null || pu == null) return null;
+    return qte * nbPieces * pu;
   }
 
-  /** Total du panier = Σ colis × pièces/colis × prix unitaire + Σ palettes × pièces/palette × prix palette. */
+  /**
+   * Total du panier = Σ colis × pièces/colis × prix unitaire + Σ palettes × pièces/palette × prix palette.
+   * Les lignes sans prix connu ne sont pas comptées : elles sont signalées à part (aConfirmer).
+   */
   function totalPanier() {
-    let total = 0;
+    let total = 0, aConfirmer = 0;
     for (const [cle, qte] of panier) {
       const [ref, type] = cle.split('|');
-      total += montantLigne(produitsParRef.get(ref), type, qte);
+      const m = montantLigne(produitsParRef.get(ref), type, qte);
+      if (m == null) aConfirmer++; else total += m;
     }
-    return Math.round(total * 100) / 100;
+    return { total: Math.round(total * 100) / 100, aConfirmer };
   }
 
   function comptePanier() {
@@ -211,7 +219,8 @@
 
   /** Met à jour tous les affichages liés au panier. */
   function majPanier(ref) {
-    const total = prix(totalPanier()) + ' HT';
+    const { total: montant, aConfirmer } = totalPanier();
+    const total = prix(montant) + ' HT';
     $('#cart-total-header').textContent = total;
     $('#cart-bar-total').textContent = total;
     $('#drawer-total').textContent = total;
@@ -219,7 +228,10 @@
     const parts = [];
     if (colis) parts.push(libelleQuantite(colis, 'colis'));
     if (palettes) parts.push(libelleQuantite(palettes, 'palette'));
+    if (aConfirmer) parts.push(`${aConfirmer} prix à confirmer`);
     $('#cart-bar-count').textContent = parts.length ? parts.join(' · ') : 'Panier vide';
+    $('#drawer-note').hidden = !aConfirmer;
+    $('#drawer-note').textContent = `+ ${aConfirmer} ligne${aConfirmer > 1 ? 's' : ''} au prix à confirmer par votre commercial`;
 
     // Sélecteurs des cartes visibles
     const refs = ref ? [ref] : [...produitsParRef.keys()];
@@ -252,6 +264,7 @@
       const p = produitsParRef.get(ref);
       const pu = type === 'colis' ? p.prixUnitaire : prixPalette(p);
       const nbPces = type === 'colis' ? p.piecesColis : p.piecesPalette;
+      const m = montantLigne(p, type, qte);
       return `
         <div class="line">
           <img src="images/produits/${encodeURIComponent(ref)}.jpg" alt="">
@@ -260,7 +273,7 @@
             <p class="line__detail">${libelleQuantite(qte, type)} × ${pieces(nbPces)} pces × ${prix(pu)}</p>
             <button type="button" class="line__remove" data-remove="${esc(cle)}">Retirer</button>
           </div>
-          <div class="line__total">${prix(montantLigne(p, type, qte))}</div>
+          <div class="line__total">${m == null ? '<span class="line__tbc">Prix à<br>confirmer</span>' : prix(m)}</div>
         </div>`;
     }).join('');
   }
@@ -706,7 +719,7 @@
       const p = produitsParRef.get(code.toUpperCase()) || produitsParRef.get(code) || data.produits.find(x => x.ean === code);
       if (!p) { rapport.push(`<p class="ko">✗ ${esc(code)} : référence inconnue</p>`); return; }
       if (qte <= 0) return;
-      if (!peutAjouter(p, type)) { rapport.push(`<p class="ko">✗ ${esc(p.ref)} : ${type} indisponible ou prix à compléter</p>`); return; }
+      if (!peutAjouter(p, type)) { rapport.push(`<p class="ko">✗ ${esc(p.ref)} : palette en rupture</p>`); return; }
       changerQuantite(p.ref, type, qte, { silencieux: true });
       ajouts++;
       rapport.push(`<p>✓ ${libelleQuantite(qte, type)} · ${esc(p.designation)}</p>`);

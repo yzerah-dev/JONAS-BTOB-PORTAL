@@ -35,7 +35,7 @@ N'importe quel hébergement de fichiers statiques convient (Netlify, OVH, serveu
 - Prix palette = prix colis unitaire × 0,95, arrondi au centime (calculé, pas stocké).
 - Total panier = Σ (colis × pièces/colis × prix unitaire) + Σ (palettes × pièces/palette × prix palette).
 - Marge = (PVC HT − prix unitaire) / PVC HT, avec PVC HT = PVC TTC / 1,20.
-- Donnée manquante (`null` dans `produits.json`) : affichage « X,XX € » / « X pces », et le bouton + correspondant est désactivé.
+- Donnée manquante (`null` dans `produits.json`) : affichage « X,XX € » / « X pces ». Le produit reste commandable ; sa ligne est marquée « prix à confirmer » et n'entre pas dans le total.
 - `paletteDisponible: false` : le + palette est désactivé (« Rupture »).
 
 ## À compléter / brancher
