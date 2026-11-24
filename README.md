@@ -54,6 +54,15 @@ Démo : photos d'ambiance du kit ajoutées sur 12385, 18885, JO077, MG076 ; `vid
 
 Données ERP reprises du connecteur Stock Jonas (stock arrêté au 27 octobre 2026) : `familleErp`, `stockDispo`, `cartonsParCouche`, `couches`, et EAN / colisage / palettisation manquants de MG073, JO013 et JCB031.
 
+## Mes statistiques
+
+`#/stats` (carte sur l'accueil, lien dans l'Espace client), à partir de `historique.json` (commandes du client : n°, date, lignes réf / type / quantité ; **données de démonstration** à remplacer par l'export ERP) :
+
+- chiffres clés sur 6 mois (montant HT aux prix actuels, nombre de commandes, commande moyenne, dernière commande) ;
+- graphique du montant commandé par mois (mois en cours en rouge, infobulle au survol / toucher, tableau des données) ;
+- **conseil de réassort** par référence : rotation = pièces commandées / jours depuis la 1re commande ; stock magasin estimé = dernière commande − rotation × jours écoulés ; « À commander » si ≤ 7 jours de couverture, « À prévoir » si ≤ 21 jours ; suggestion = 1 mois de rotation arrondi au colis ; alternative proposée si le produit est en rupture chez Jonas. C'est une estimation : le site ne connaît pas les ventes en magasin ;
+- dernières commandes avec bouton « Recommander ».
+
 ## Règles de calcul
 
 - Prix palette = prix colis unitaire × 0,95, arrondi au centime (calculé, pas stocké).

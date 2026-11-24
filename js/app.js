@@ -45,6 +45,7 @@
 
   /* ---------- État de l'application ---------- */
   let data = null;               // contenu de produits.json
+  let historique = [];           // commandes passées du client (historique.json)
   let produitsParRef = new Map(); // accès rapide par référence
   const panier = new Map();      // clé « REF|colis », « REF|palette » ou « REF|camion » → quantité
   let rerendreListe = null;      // redessine la liste affichée (après un changement de mode)
@@ -194,6 +195,7 @@
     ancre: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="2"/><path d="M12 7v14M8 11h8M5 14a7 7 0 0 0 14 0"/></svg>',
     camion: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 6h12v10H2zM14 9h4l3 3.5V16h-7z"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>',
     play: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4z" fill="currentColor"/></svg>',
+    graph: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
     coche: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>'
   };
 
@@ -565,6 +567,11 @@
 
         <!-- Cartes d'action -->
         <div class="actions">
+          <a href="#/stats" class="action action--wide action--stats">
+            <span class="action__icon">${ICONES.graph}</span>
+            <span><span class="action__title">Mes statistiques</span><br><span class="action__sub">Mes commandes et conseil de réassort</span></span>
+            <span class="action__chev">${ICONES.chevron}</span>
+          </a>
           <a href="#/reassort" class="action action--red">
             <span class="action__icon">${ICONES.reassort}</span>
             <span class="action__title">Réassort Express</span>
@@ -1244,6 +1251,240 @@
     rerendreListe();
   }
 
+  /* =========================================================
+     Mes statistiques (#/stats)
+     Commandes passées (historique.json), graphique mensuel,
+     conseil de réassort calculé sur le rythme de commande.
+     ========================================================= */
+  const JOUR = 86400000;
+  const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  /** Montant HT d'une commande aux prix actuels (lignes sans prix ignorées). */
+  function montantCommande(cmd) {
+    return cmd.lignes.reduce((t, l) => {
+      const p = produitsParRef.get(l.ref);
+      const m = p ? montantLigne(p, l.type, l.qte) : null;
+      return t + (m ?? 0);
+    }, 0);
+  }
+  const piecesLigne = (p, l) => l.qte * ((l.type === 'colis' ? p.piecesColis : p.piecesPalette) || 0);
+
+  /**
+   * Conseil de réassort, par référence commandée :
+   * - rythme = pièces commandées / jours écoulés depuis la 1re commande ;
+   * - stock magasin estimé = pièces de la dernière commande − rythme × jours depuis ;
+   * - couverture = stock estimé / rythme ; suggestion = 1 mois de rythme, arrondi au colis.
+   */
+  function conseilsReassort(aujourdhui) {
+    const parRef = new Map();
+    for (const cmd of historique) {
+      for (const l of cmd.lignes) {
+        const p = produitsParRef.get(l.ref);
+        if (!p) continue;
+        const e = parRef.get(l.ref) || { p, pieces: 0, premiere: cmd.date, derniere: cmd.date, dernierePieces: 0 };
+        e.pieces += piecesLigne(p, l);
+        if (cmd.date < e.premiere) e.premiere = cmd.date;
+        if (cmd.date > e.derniere) { e.derniere = cmd.date; e.dernierePieces = 0; }
+        if (cmd.date === e.derniere) e.dernierePieces += piecesLigne(p, l);
+        parRef.set(l.ref, e);
+      }
+    }
+    return [...parRef.values()].map(e => {
+      const jours = Math.max(30, (aujourdhui - new Date(e.premiere + 'T12:00:00')) / JOUR);
+      const rythme = e.pieces / jours; // pièces par jour
+      const depuis = (aujourdhui - new Date(e.derniere + 'T12:00:00')) / JOUR;
+      const stockEstime = Math.max(0, e.dernierePieces - rythme * depuis);
+      const couverture = rythme ? stockEstime / rythme : Infinity;
+      const colis = e.p.piecesColis ? Math.max(1, Math.ceil((rythme * 30) / e.p.piecesColis)) : null;
+      const niveau = couverture <= 7 ? 'urgent' : couverture <= 21 ? 'bientot' : 'ok';
+      // Alternative si rupture chez Jonas : même sous-catégorie, en stock
+      // (le produit le plus proche par la désignation, même sous-catégorie)
+      const mots = s => new Set(normaliser(s).split(/[^a-z0-9]+/).filter(w => w.length > 2));
+      const proche = x => { const a = mots(e.p.designation); return [...mots(x.designation)].filter(w => a.has(w)).length; };
+      const alternative = enRupture(e.p)
+        ? data.produits.filter(x => x.ref !== e.p.ref && x.sousCategorie === e.p.sousCategorie && !enRupture(x) && visibleHorsFob(x))
+            .sort((a, b) => proche(b) - proche(a))[0] || null
+        : null;
+      return { ...e, rythme, couverture, colis, niveau, alternative };
+    }).sort((a, b) => a.couverture - b.couverture);
+  }
+
+  /** Graphique en barres : montant HT commandé par mois (une seule série, mois en cours mis en avant). */
+  function graphiqueMois(mois, W = 640) {
+    const H = W < 500 ? 240 : 260, m = { t: 28, r: 8, b: 30, l: 52 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const max = Math.max(...mois.map(x => x.montant), 1);
+    const pas = [100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000, 50000].find(s => max / s <= 5) || 100000;
+    const haut = Math.ceil(max / pas) * pas;
+    const y = v => m.t + ih - (v / haut) * ih;
+    const bw = iw / mois.length;
+    const barre = Math.min(56, bw * 0.56);
+    const iMax = mois.reduce((k, x, i) => x.montant > mois[k].montant ? i : k, 0);
+    const ticks = Array.from({ length: haut / pas + 1 }, (_, i) => i * pas);
+    const court = v => v >= 1000 ? (v / 1000).toLocaleString('fr-FR', { maximumFractionDigits: 1 }) + ' k€' : v + ' €';
+    return `
+      <svg viewBox="0 0 ${W} ${H}" class="chart" role="img" aria-label="Montant HT commandé par mois sur 6 mois">
+        ${ticks.map(t => `<line x1="${m.l}" x2="${W - m.r}" y1="${y(t)}" y2="${y(t)}" class="chart__grid ${t === 0 ? 'chart__base' : ''}"/>
+          <text x="${m.l - 8}" y="${y(t) + 4}" text-anchor="end" class="chart__tick">${court(t)}</text>`).join('')}
+        ${mois.map((x, i) => {
+          const cx = m.l + bw * i + bw / 2;
+          const h = Math.max(0, y(0) - y(x.montant));
+          const r = Math.min(4, h);
+          const top = y(x.montant);
+          // barre à coins supérieurs arrondis, posée sur la ligne de base
+          const path = h > 0 ? `M${cx - barre / 2},${y(0)} V${top + r} Q${cx - barre / 2},${top} ${cx - barre / 2 + r},${top} H${cx + barre / 2 - r} Q${cx + barre / 2},${top} ${cx + barre / 2},${top + r} V${y(0)} Z` : '';
+          const label = (i === mois.length - 1 || i === iMax) && x.montant > 0;
+          return `
+            ${path ? `<path d="${path}" class="chart__bar ${x.courant ? 'is-current' : ''}"/>` : ''}
+            ${label ? `<text x="${cx}" y="${top - 8}" text-anchor="middle" class="chart__value">${court(Math.round(x.montant))}</text>` : ''}
+            <text x="${cx}" y="${H - 8}" text-anchor="middle" class="chart__tick ${x.courant ? 'is-current' : ''}">${x.label}</text>
+            <rect x="${m.l + bw * i}" y="${m.t}" width="${bw}" height="${ih}" class="chart__hit" tabindex="0" data-i="${i}"
+              aria-label="${x.label} : ${prix(x.montant)} HT, ${x.nb} commande${x.nb > 1 ? 's' : ''}"/>`;
+        }).join('')}
+      </svg>`;
+  }
+
+  function pageStats() {
+    const aujourdhui = new Date();
+    if (!historique.length) {
+      app.innerHTML = `<div class="container"><div class="page-head"><h1>Mes statistiques</h1></div>
+        <div class="empty"><strong>Aucune commande pour le moment</strong>Vos statistiques apparaîtront après votre première commande.</div></div>`;
+      return;
+    }
+    const cmds = [...historique].sort((a, b) => b.date.localeCompare(a.date));
+
+    // 6 derniers mois (mois en cours inclus)
+    const mois = Array.from({ length: 6 }, (_, k) => {
+      const d = new Date(aujourdhui.getFullYear(), aujourdhui.getMonth() - 5 + k, 1);
+      const cle = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const duMois = cmds.filter(c => c.date.startsWith(cle));
+      return {
+        cle, courant: k === 5, nb: duMois.length,
+        label: d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.', ''),
+        labelLong: d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+        montant: duMois.reduce((t, c) => t + montantCommande(c), 0)
+      };
+    });
+    const sur6 = cmds.filter(c => c.date >= mois[0].cle + '-01');
+    const total = sur6.reduce((t, c) => t + montantCommande(c), 0);
+    const derniere = cmds[0];
+    const joursDepuis = Math.floor((aujourdhui - new Date(derniere.date + 'T12:00:00')) / JOUR);
+    const conseils = conseilsReassort(aujourdhui);
+    const aCommander = conseils.filter(c => c.niveau !== 'ok' && c.colis && !enRupture(c.p));
+    const NIVEAUX = { urgent: ['À commander', 'urgent'], bientot: ['À prévoir', 'bientot'], ok: ['Stock suffisant', 'ok'] };
+
+    app.innerHTML = `
+      <div class="container">
+        <div class="page-head">
+          <h1>Mes statistiques</h1>
+          <p>Vos commandes des 6 derniers mois et nos conseils de réassort.</p>
+          <p class="demo-note">Données de démonstration : l'historique réel viendra de l'ERP.</p>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi"><span>Commandé sur 6 mois</span><strong>${prix(total)}</strong><small>HT, aux prix actuels</small></div>
+          <div class="kpi"><span>Commandes</span><strong>${sur6.length}</strong><small>sur 6 mois</small></div>
+          <div class="kpi"><span>Commande moyenne</span><strong>${prix(sur6.length ? total / sur6.length : 0)}</strong><small>HT</small></div>
+          <div class="kpi"><span>Dernière commande</span><strong>${fmtDate(derniere.date)}</strong><small>il y a ${joursDepuis} jour${joursDepuis > 1 ? 's' : ''}</small></div>
+        </div>
+
+        <section class="section">
+          <h2 class="section__title">Montant commandé par mois</h2>
+          <div class="chart-wrap" id="chart-wrap">
+            ${graphiqueMois(mois, Math.round(Math.min(640, Math.max(320, (app.clientWidth || 360) - 48))))}
+            <div class="chart__tip" id="chart-tip" hidden></div>
+          </div>
+          <details class="chart-table"><summary>Voir les données</summary>
+            <div class="table-wrap"><table class="table">
+              <thead><tr><th>Mois</th><th>Commandes</th><th>Montant HT</th></tr></thead>
+              <tbody>${mois.map(x => `<tr><td>${x.labelLong}</td><td>${x.nb}</td><td>${prix(x.montant)}</td></tr>`).join('')}</tbody>
+            </table></div>
+          </details>
+        </section>
+
+        <section class="section">
+          <div class="section__row">
+            <h2 class="section__title">Conseil de réassort</h2>
+            ${aCommander.length ? `<button type="button" class="btn btn--red" id="conseil-all">Ajouter les ${aCommander.length} suggestions</button>` : ''}
+          </div>
+          <p class="mode-note">Estimation à partir du rythme de vos commandes : nous ne connaissons pas vos ventes en magasin. Suggestion = environ 1 mois de rotation.</p>
+          <div class="advice">
+            ${conseils.map(c => {
+              const [lib, cls] = NIVEAUX[c.niveau];
+              const jours = Number.isFinite(c.couverture) ? Math.round(c.couverture) : null;
+              return `
+              <article class="advice__row">
+                <a href="#/produit/${encodeURIComponent(c.p.ref)}" class="advice__img"><img src="images/produits/${encodeURIComponent(c.p.ref)}.jpg" alt=""></a>
+                <div class="advice__body">
+                  <p class="advice__name"><a href="#/produit/${encodeURIComponent(c.p.ref)}">${esc(c.p.designation)}</a></p>
+                  <p class="advice__meta">Rotation ≈ ${fmtNb(Math.round(c.rythme * 30))} pces/mois · dernière commande le ${fmtDate(c.derniere)}</p>
+                  <p class="advice__meta"><span class="lvl lvl--${cls}">${lib}</span> ${jours != null ? `stock estimé : ${jours <= 0 ? 'épuisé' : '≈ ' + jours + ' jour' + (jours > 1 ? 's' : '')}` : ''}</p>
+                  ${enRupture(c.p) ? `<p class="advice__warn">En rupture chez Jonas.${c.alternative ? ` Alternative : <a href="#/produit/${encodeURIComponent(c.alternative.ref)}">${esc(c.alternative.designation)}</a>` : ''}</p>` : ''}
+                </div>
+                <div class="advice__act">
+                  ${c.colis && c.niveau !== 'ok' && !enRupture(c.p)
+                    ? `<button type="button" class="btn btn--black" data-conseil="${esc(c.p.ref)}" data-colis="${c.colis}">+ ${c.colis} colis</button>`
+                    : ''}
+                </div>
+              </article>`;
+            }).join('')}
+          </div>
+        </section>
+
+        <section class="section">
+          <h2 class="section__title">Mes dernières commandes</h2>
+          <div class="table-wrap"><table class="table orders">
+            <thead><tr><th>Date</th><th>Commande</th><th>Contenu</th><th>Montant HT</th><th></th></tr></thead>
+            <tbody>${cmds.slice(0, 6).map(c => `
+              <tr>
+                <td>${fmtDate(c.date)}</td>
+                <td>${esc(c.numero)}</td>
+                <td>${c.lignes.length} réf. · ${c.lignes.map(l => esc(l.ref)).join(', ')}</td>
+                <td><strong>${prix(montantCommande(c))}</strong></td>
+                <td><button type="button" class="btn btn--outline btn--sm" data-recommander="${esc(c.numero)}">Recommander</button></td>
+              </tr>`).join('')}
+            </tbody>
+          </table></div>
+        </section>
+      </div>`;
+
+    // Infobulle du graphique (survol, toucher, clavier)
+    const wrap = $('#chart-wrap'), tip = $('#chart-tip');
+    const montrer = el => {
+      const x = mois[+el.dataset.i];
+      tip.innerHTML = `<strong>${x.labelLong}</strong><span>${prix(x.montant)} HT</span><span>${x.nb} commande${x.nb > 1 ? 's' : ''}</span>`;
+      tip.hidden = false;
+      const r = el.getBoundingClientRect(), w = wrap.getBoundingClientRect();
+      const left = Math.min(Math.max(r.left - w.left + r.width / 2, 70), w.width - 70);
+      tip.style.left = left + 'px';
+      wrap.querySelectorAll('.chart__hit').forEach(h => h.classList.toggle('is-hover', h === el));
+    };
+    const cacher = () => { tip.hidden = true; wrap.querySelectorAll('.chart__hit').forEach(h => h.classList.remove('is-hover')); };
+    wrap.querySelectorAll('.chart__hit').forEach(h => {
+      h.addEventListener('pointerenter', () => montrer(h));
+      h.addEventListener('click', () => montrer(h));
+      h.addEventListener('focus', () => montrer(h));
+      h.addEventListener('blur', cacher);
+    });
+    wrap.addEventListener('pointerleave', cacher);
+
+    // Ajouts au panier
+    app.querySelectorAll('[data-conseil]').forEach(b => b.addEventListener('click', () => {
+      changerQuantite(b.dataset.conseil, 'colis', +b.dataset.colis, { silencieux: true });
+      toast(`${b.dataset.colis} colis · ${produitsParRef.get(b.dataset.conseil).designation}`);
+    }));
+    $('#conseil-all')?.addEventListener('click', () => {
+      aCommander.forEach(c => changerQuantite(c.p.ref, 'colis', c.colis, { silencieux: true }));
+      toast(`${aCommander.length} suggestions ajoutées au panier`);
+    });
+    app.querySelectorAll('[data-recommander]').forEach(b => b.addEventListener('click', () => {
+      const cmd = historique.find(c => c.numero === b.dataset.recommander);
+      let n = 0;
+      cmd.lignes.forEach(l => { const p = produitsParRef.get(l.ref); if (p && peutAjouter(p, l.type)) { changerQuantite(l.ref, l.type, l.qte, { silencieux: true }); n++; } });
+      toast(`${n} ligne${n > 1 ? 's' : ''} de ${cmd.numero} ajoutée${n > 1 ? 's' : ''}${n < cmd.lignes.length ? ' (articles en rupture ignorés)' : ''}`);
+    }));
+  }
+
   /* ---------- Réassort Express ---------- */
   function pageReassort() {
     const lignes = CONFIG.historique.filter(h => produitsParRef.has(h.ref));
@@ -1383,6 +1624,7 @@
             <div><span>Mise à jour du stock</span><strong>Chaque soir à 20 h</strong></div>
           </div>
           <div class="panel__row">
+            <a href="#/stats" class="btn btn--black">Mes statistiques</a>
             <a href="#/reassort" class="btn btn--red">Réassort Express</a>
           </div>
         </div>
@@ -1424,6 +1666,7 @@
       case 'reliquats': pageReliquats(); break;
       case 'import': pageImport(); break;
       case 'compte': pageCompte(); break;
+      case 'stats': pageStats(); pageProduits = true; break;
       case 'mentions': pageTexte('Mentions légales'); break;
       case 'cgv': pageTexte('Conditions générales de vente'); break;
       default: pageIntrouvable();
@@ -1601,6 +1844,11 @@
       return;
     }
     produitsParRef = new Map(data.produits.map(p => [p.ref, p]));
+    // Historique de commandes du client (facultatif : la page statistiques s'en sert)
+    try {
+      const h = await fetch('historique.json', { cache: 'no-cache' });
+      historique = h.ok ? (await h.json()).commandes || [] : [];
+    } catch { historique = []; }
 
     // Sélecteur de mode d'achat, en haut de toutes les pages (en-tête + barre compacte)
     document.querySelectorAll('[data-modes]').forEach(el => { el.innerHTML = selecteurMode(); });

@@ -795,6 +795,59 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
 .doc__titre small { display: block; font-weight: 500; color: var(--gris-texte); font-size: 12px; }
 .doc__go { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; font-size: 14px; white-space: nowrap; }
 
+/* ---------- Mes statistiques ---------- */
+.action--stats { background: var(--blanc); color: var(--noir); border: 1.5px solid var(--noir); }
+.action--stats .action__sub { color: var(--gris-texte); }
+.action--stats .action__icon { background: var(--noir); color: var(--blanc); }
+@media (min-width: 1024px) { .actions { grid-template-columns: 1.2fr 1fr 1fr; } .action--stats { grid-column: auto; } }
+.demo-note { display: inline-block; margin-top: 8px; font-size: 12.5px; font-weight: 700; border: 1.5px dashed var(--gris-texte); border-radius: 8px; padding: 4px 10px; color: var(--gris-texte); }
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 20px; }
+.kpi { border: 1px solid var(--bordure); border-radius: 16px; padding: 14px; display: grid; gap: 2px; }
+.kpi span { font-size: 12.5px; font-weight: 700; color: var(--gris-texte); }
+.kpi strong { font-size: 22px; font-weight: 900; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.kpi small { font-size: 12px; color: var(--gris-texte); }
+@media (min-width: 900px) { .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; } .kpi strong { font-size: 28px; } }
+.chart-wrap { position: relative; border: 1px solid var(--bordure); border-radius: var(--radius-card); padding: 12px 8px 4px; }
+.chart { display: block; width: 100%; height: auto; max-width: 100%; stroke: none; fill: none; stroke-width: 1; }
+.chart text { stroke: none; }
+.chart__grid { stroke: #ECECEC; stroke-width: 1; }
+.chart__base { stroke: #BDBDBD; }
+.chart__tick { fill: var(--gris-texte); font-size: 12px; font-family: var(--font); font-variant-numeric: tabular-nums; }
+.chart__tick.is-current { fill: var(--noir); font-weight: 800; }
+.chart__value { fill: var(--noir); font-size: 13px; font-weight: 800; font-family: var(--font); }
+.chart__bar { fill: var(--noir); }
+.chart__bar.is-current { fill: var(--rouge); }
+.chart__hit { fill: transparent; cursor: pointer; outline: none; }
+.chart__hit.is-hover, .chart__hit:focus-visible { fill: rgba(17,17,17,.05); }
+.chart__tip {
+  position: absolute; top: 6px; transform: translateX(-50%); z-index: 2; pointer-events: none;
+  background: var(--noir); color: var(--blanc); border-radius: 10px; padding: 8px 12px; display: grid; gap: 2px; font-size: 13px; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.chart-table { margin-top: 10px; font-size: 14px; }
+.chart-table summary { cursor: pointer; font-weight: 700; min-height: 36px; display: flex; align-items: center; }
+.section__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.section__row .section__title { margin-bottom: 0; }
+.advice { display: grid; gap: 10px; margin-top: 12px; }
+.advice__row { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; align-items: center; border: 1px solid var(--bordure); border-radius: 16px; padding: 12px; }
+.advice__img img { width: 64px; height: 64px; object-fit: contain; border-radius: 10px; }
+.advice__body { display: grid; gap: 4px; min-width: 0; }
+.advice__name { font-weight: 800; }
+.advice__name a:hover { text-decoration: underline; }
+.advice__meta { font-size: 13px; color: var(--gris-texte); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.advice__warn { font-size: 13px; font-weight: 700; color: var(--rouge); }
+.advice__warn a { text-decoration: underline; }
+.advice__act { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+.advice__act:empty { display: none; }
+@media (min-width: 720px) { .advice__row { grid-template-columns: 64px minmax(0, 1fr) auto; } .advice__act { grid-column: auto; } }
+.lvl { display: inline-block; font-size: 11.5px; font-weight: 800; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; letter-spacing: .04em; }
+.lvl--urgent { background: var(--rouge); color: var(--blanc); }
+.lvl--bientot { background: var(--jaune); color: var(--noir); }
+.lvl--ok { border: 1.5px solid var(--bordure); color: var(--gris-texte); }
+.btn--sm { min-height: 40px; padding: 0 14px; font-size: 14px; }
+.orders td { white-space: nowrap; }
+.orders td:nth-child(3) { white-space: normal; min-width: 160px; color: var(--gris-texte); }
+
 /* ---------- Pages simples (réassort, reliquats, import, compte) ---------- */
 .page-head { padding-top: 24px; }
 .page-head h1 { font-size: 32px; }

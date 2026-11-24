@@ -1,0 +1,200 @@
+{
+  "_info": "Historique de commandes du client connecté. DONNÉES DE DÉMONSTRATION : à remplacer par l'export ERP (n° de commande, date, lignes réf / type colis|palette / quantité). Les montants sont recalculés avec les prix actuels.",
+  "commandes": [
+    {
+      "numero": "CDE-DEMO-0601",
+      "date": "2026-06-04",
+      "lignes": [
+        {
+          "ref": "MG076",
+          "type": "colis",
+          "qte": 4
+        },
+        {
+          "ref": "12385",
+          "type": "colis",
+          "qte": 2
+        },
+        {
+          "ref": "18885",
+          "type": "colis",
+          "qte": 2
+        }
+      ]
+    },
+    {
+      "numero": "CDE-DEMO-0602",
+      "date": "2026-06-22",
+      "lignes": [
+        {
+          "ref": "2748",
+          "type": "colis",
+          "qte": 3
+        },
+        {
+          "ref": "2752",
+          "type": "colis",
+          "qte": 1
+        }
+      ]
+    },
+    {
+      "numero": "CDE-DEMO-0701",
+      "date": "2026-07-08",
+      "lignes": [
+        {
+          "ref": "MG076",
+          "type": "colis",
+          "qte": 5
+        },
+        {
+          "ref": "12385",
+          "type": "colis",
+          "qte": 2
+        },
+        {
+          "ref": "18885",
+          "type": "colis",
+          "qte": 3
+        },
+        {
+          "ref": "2750",
+          "type": "colis",
+          "qte": 1
+        }
+      ]
+    },
+    {
+      "numero": "CDE-DEMO-0702",
+      "date": "2026-07-27",
+      "lignes": [
+        {
+          "ref": "2748",
+          "type": "colis",
+          "qte": 2
+        },
+        {
+          "ref": "12385",
+          "type": "colis",
+          "qte": 1
+        }
+      ]
+    },
+    {
+      "numero": "CDE-DEMO-0801",
+      "date": "2026-08-19",
+      "lignes": [
+        {
+          "ref": "MG076",
+          "type": "colis",
+          "qte": 3
+        },
+        {
+          "ref": "18885",
+          "type": "colis",
+          "qte": 2
+        }
+      ]
+    },
+    {
+      "numero": "CDE-DEMO-0901",
+      "date": "2026-09-03",
+      "lignes": [
+        {
+          "ref": "MG076",
+          "type": "colis",
+          "qte": 6
+        },
+        {
+          "ref": "12385",
+          "type": "colis",
+          "qte": 3
+        },
+        {
+          "ref": "18885",
+          "type": "colis",
+          "qte": 3
+        },
+        {
+          "ref": "2748",
+          "type": "colis",
+          "qte": 3
+        }
+      ]
+    },
+    {
+      "numero": "CDE-DEMO-0902",
+      "date": "2026-09-24",
+      "lignes": [
+        {
+          "ref": "2752",
+          "type": "colis",
+          "qte": 2
+        },
+        {
+          "ref": "2750",
+          "type": "colis",
+          "qte": 1
+        }
+      ]
+    },
+    {
+      "numero": "CDE-DEMO-1001",
+      "date": "2026-10-06",
+      "lignes": [
+        {
+          "ref": "MG076",
+          "type": "palette",
+          "qte": 1
+        },
+        {
+          "ref": "12385",
+          "type": "colis",
+          "qte": 3
+        },
+        {
+          "ref": "18885",
+          "type": "colis",
+          "qte": 4
+        }
+      ]
+    },
+    {
+      "numero": "CDE-DEMO-1002",
+      "date": "2026-10-28",
+      "lignes": [
+        {
+          "ref": "2748",
+          "type": "colis",
+          "qte": 4
+        },
+        {
+          "ref": "MG076",
+          "type": "colis",
+          "qte": 4
+        }
+      ]
+    },
+    {
+      "numero": "CDE-DEMO-1101",
+      "date": "2026-11-12",
+      "lignes": [
+        {
+          "ref": "12385",
+          "type": "colis",
+          "qte": 2
+        },
+        {
+          "ref": "18885",
+          "type": "colis",
+          "qte": 2
+        },
+        {
+          "ref": "2752",
+          "type": "colis",
+          "qte": 2
+        }
+      ]
+    }
+  ]
+}
