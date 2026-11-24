@@ -50,13 +50,15 @@ Champs ajoutés dans `produits.json` : `eligibleCamion` (désigné par Jonas ; a
 
 ## Offre FOB
 
-Mode **FOB** dans l'en-tête, page `#/fob`. Sélection hors offre courante (`produits.json` → `fob`), prix FOB en dollars US par pièce au départ du port.
+Mode **FOB** dans l'en-tête. Le catalogue garde la même structure (rayons, sous-catégories, sélections, recherche, tri) ; en mode FOB :
 
-- Un conteneur en préparation par port de départ (Ningbo, Shanghai…). MOQ : 1 conteneur complet par port.
-- Le client choisit 20', 40' ou 40' HC (volumes utiles 28 / 58 / 68 m³, dans `fob.conteneurs`). Le remplissage est calculé en m³ : cartons × `volumeCarton`.
-- Le + ajoute `fob.pasCartons` cartons (50) sans jamais dépasser le volume. « Compléter le conteneur » remplit l'espace restant avec le produit.
-- « Réserver ce conteneur » s'active à partir de `fob.remplissageMin` (90 %). La demande n'est envoyée nulle part pour l'instant (à brancher).
-- Les 5 produits `FOB-EX-…` sont des **exemples fictifs** (`exemple: true`) à remplacer par la vraie sélection : réf., désignation, port, `piecesCarton`, `volumeCarton` (m³), `prixFob` ($), `photo`.
+- seuls les produits qui ont un bloc `fob` sont affichés, y compris **tous les produits hors stock** (`enStock: false`). Ces derniers n'apparaissent dans aucun autre mode ;
+- chaque carte indique son **port de départ**, et des pastilles permettent de **filtrer par port** ;
+- prix FOB en dollars US par pièce (`fob.prixFob`), carton = `piecesColis` pièces et `fob.volumeCarton` m³.
+
+**MOQ : 1 conteneur complet par port.** Ajouter un produit crée ou remplit automatiquement le conteneur de son port. Le client choisit 20', 40' ou 40' HC (volumes utiles 28 / 58 / 68 m³ dans `fob.conteneurs`). Le + ajoute `fob.pasCartons` cartons (50) sans dépasser le volume ; « Compléter le conteneur » remplit l'espace restant. « Réserver ce conteneur » s'active à partir de `fob.remplissageMin` (90 %) ; la demande n'est envoyée nulle part pour l'instant (à brancher).
+
+Les 7 produits `FOB-EX-…` sont des **exemples fictifs** (`exemple: true`, sans photo) à remplacer par les vrais produits hors stock.
 
 ## À compléter / brancher
 

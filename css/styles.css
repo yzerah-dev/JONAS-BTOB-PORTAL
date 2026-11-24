@@ -574,7 +574,13 @@ body.has-cart-bar .floating { bottom: calc(86px + env(safe-area-inset-bottom)); 
 }
 .fob-fill:hover { border-color: var(--blanc); }
 .fob-layout { display: grid; gap: 16px; margin-top: 4px; }
-.fob-aside { order: -1; }
+.fob-aside { order: -1; display: grid; gap: 12px; }
+.chips--ports { margin-top: 12px; }
+.port-tag {
+  position: absolute; top: 10px; right: 10px; z-index: 1; display: inline-flex; align-items: center; gap: 4px;
+  background: var(--noir); color: var(--blanc); font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  padding: 5px 8px; border-radius: 6px;
+}
 .grid--fob { margin-top: 0; }
 .fob-panel { border: 1.5px solid var(--noir); border-radius: var(--radius-card); padding: 16px; display: grid; gap: 10px; }
 .fob-panel.is-complet { border-color: var(--jaune); box-shadow: 0 0 0 3px var(--jaune) inset; }

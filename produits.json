@@ -12,7 +12,8 @@
         "Tampons & éponges",
         "Microfibre",
         "Brosserie",
-        "Vinaigres & nettoyants"
+        "Vinaigres & nettoyants",
+        "Seaux & gants"
       ]
     },
     {
@@ -20,13 +21,17 @@
       "nom": "Maison",
       "sousCategories": [
         "Linge",
-        "Parfums de linge"
+        "Parfums de linge",
+        "Rangement"
       ]
     },
     {
       "id": "cuisine",
       "nom": "Cuisine",
-      "sousCategories": []
+      "sousCategories": [
+        "Conservation",
+        "Verres & vaisselle"
+      ]
     },
     {
       "id": "beaute",
@@ -39,7 +44,9 @@
     {
       "id": "textile",
       "nom": "Textile",
-      "sousCategories": []
+      "sousCategories": [
+        "Linge de maison"
+      ]
     },
     {
       "id": "bazar",
@@ -74,7 +81,7 @@
     ]
   },
   "fob": {
-    "_info": "Offre FOB : produits hors offre courante, prix FOB en USD par pièce au départ du port. MOQ = 1 conteneur complet par port. Les produits marqués exemple: true sont des données de démonstration à remplacer.",
+    "_info": "Offre FOB : même catalogue (rayons, sous-catégories). Un produit est commandable en FOB s'il a un bloc « fob » {port, prixFob ($/pce), volumeCarton (m³)} ; piecesColis = pièces par carton. Les produits « enStock: false » (hors stock) ne sont visibles qu'en mode FOB. MOQ = 1 conteneur complet par port. Les produits « exemple: true » sont fictifs.",
     "devise": "USD",
     "remplissageMin": 0.9,
     "pasCartons": 50,
@@ -106,79 +113,29 @@
         "nom": "Shanghai",
         "pays": "Chine"
       }
-    ],
-    "produits": [
-      {
-        "ref": "FOB-EX-01",
-        "designation": "Seau ménage 10 L avec essoreur",
-        "marque": "Exemple",
-        "port": "ningbo",
-        "piecesCarton": 12,
-        "volumeCarton": 0.11,
-        "prixFob": 1.35,
-        "photo": null,
-        "exemple": true
-      },
-      {
-        "ref": "FOB-EX-02",
-        "designation": "Balai brosse coco 30 cm",
-        "marque": "Exemple",
-        "port": "ningbo",
-        "piecesCarton": 24,
-        "volumeCarton": 0.065,
-        "prixFob": 0.62,
-        "photo": null,
-        "exemple": true
-      },
-      {
-        "ref": "FOB-EX-03",
-        "designation": "Gants ménage latex (paire)",
-        "marque": "Exemple",
-        "port": "ningbo",
-        "piecesCarton": 240,
-        "volumeCarton": 0.045,
-        "prixFob": 0.14,
-        "photo": null,
-        "exemple": true
-      },
-      {
-        "ref": "FOB-EX-04",
-        "designation": "Boîtes alimentaires x3",
-        "marque": "Exemple",
-        "port": "shanghai",
-        "piecesCarton": 36,
-        "volumeCarton": 0.072,
-        "prixFob": 0.88,
-        "photo": null,
-        "exemple": true
-      },
-      {
-        "ref": "FOB-EX-05",
-        "designation": "Bac de rangement 30 L",
-        "marque": "Exemple",
-        "port": "shanghai",
-        "piecesCarton": 10,
-        "volumeCarton": 0.135,
-        "prixFob": 1.95,
-        "photo": null,
-        "exemple": true
-      }
     ]
   },
   "produits": [
-    {"ref": "MG076", "designation": "Vinaigre ménager citron 1 L", "marque": "Les Secrets de Mamie Georgette", "rayon": "menage", "sousCategorie": "Vinaigres & nettoyants", "piecesColis": 12, "piecesPalette": 600, "ean": "3701571444435", "prixUnitaire": 0.7, "pvc": 1.49, "badge": "TOP", "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null},
-    {"ref": "12385", "designation": "Tampons à récurer inox x4", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Tampons & éponges", "piecesColis": 48, "piecesPalette": 1152, "ean": "3257990109863", "prixUnitaire": 0.65, "pvc": null, "badge": "TOP", "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null},
-    {"ref": "18885", "designation": "Housse balai microfibre élastique", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": 2400, "ean": "3303210014834", "prixUnitaire": 0.7, "pvc": null, "badge": "BEST", "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null},
-    {"ref": "2748", "designation": "Lavettes microfibre 30x30 x2", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": null, "ean": null, "prixUnitaire": 0.5, "pvc": null, "badge": "BEST", "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null},
-    {"ref": "2750", "designation": "Lavettes microfibre 30x30 x5", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": 1152, "ean": "3303210937485", "prixUnitaire": 0.65, "pvc": null, "badge": null, "paletteDisponible": false, "eligibleCamion": false, "prixCamion": null},
-    {"ref": "2752", "designation": "Serpillière microfibre 50x70", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": null, "ean": null, "prixUnitaire": 0.75, "pvc": null, "badge": "NEW", "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null},
-    {"ref": "JO095", "designation": "Pelle + balayette", "marque": "Jardin d'Orient", "rayon": "menage", "sousCategorie": "Brosserie", "piecesColis": 24, "piecesPalette": 912, "ean": "3701571445562", "prixUnitaire": null, "pvc": null, "badge": "BEST", "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null},
-    {"ref": "JO094", "designation": "Pinces à linge x12", "marque": "Jardin d'Orient", "rayon": "maison", "sousCategorie": "Linge", "piecesColis": 48, "piecesPalette": 2400, "ean": "3701571445555", "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null},
-    {"ref": "JO098", "designation": "Chiffons microfibre x2", "marque": "Jardin d'Orient", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": 4224, "ean": "3701571445593", "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null},
-    {"ref": "JO077", "designation": "Set 3 brosses", "marque": "Jardin d'Orient", "rayon": "menage", "sousCategorie": "Brosserie", "piecesColis": 24, "piecesPalette": 1200, "ean": "3701571445388", "prixUnitaire": null, "pvc": null, "badge": "NEW", "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null},
-    {"ref": "MG073", "designation": "Lingettes nettoyantes x50", "marque": "Les Secrets de Mamie Georgette", "rayon": "menage", "sousCategorie": "Vinaigres & nettoyants", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null},
-    {"ref": "JO013", "designation": "Parfum de linge", "marque": "Jardin d'Orient", "rayon": "maison", "sousCategorie": "Parfums de linge", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null},
-    {"ref": "JCB015", "designation": "Masque cheveux Pro Couleur", "marque": "Biguine Paris", "rayon": "beaute", "sousCategorie": "Soins cheveux", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null},
-    {"ref": "JCB031", "designation": "Accessoire cheveux", "marque": "Biguine Paris", "rayon": "beaute", "sousCategorie": "Accessoires cheveux", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null}
+    {"ref": "MG076", "designation": "Vinaigre ménager citron 1 L", "marque": "Les Secrets de Mamie Georgette", "rayon": "menage", "sousCategorie": "Vinaigres & nettoyants", "piecesColis": 12, "piecesPalette": 600, "ean": "3701571444435", "prixUnitaire": 0.7, "pvc": 1.49, "badge": "TOP", "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null, "enStock": true},
+    {"ref": "12385", "designation": "Tampons à récurer inox x4", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Tampons & éponges", "piecesColis": 48, "piecesPalette": 1152, "ean": "3257990109863", "prixUnitaire": 0.65, "pvc": null, "badge": "TOP", "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null, "enStock": true},
+    {"ref": "18885", "designation": "Housse balai microfibre élastique", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": 2400, "ean": "3303210014834", "prixUnitaire": 0.7, "pvc": null, "badge": "BEST", "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null, "enStock": true},
+    {"ref": "2748", "designation": "Lavettes microfibre 30x30 x2", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": null, "ean": null, "prixUnitaire": 0.5, "pvc": null, "badge": "BEST", "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null, "enStock": true},
+    {"ref": "2750", "designation": "Lavettes microfibre 30x30 x5", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": 1152, "ean": "3303210937485", "prixUnitaire": 0.65, "pvc": null, "badge": null, "paletteDisponible": false, "eligibleCamion": false, "prixCamion": null, "enStock": true},
+    {"ref": "2752", "designation": "Serpillière microfibre 50x70", "marque": "Ultranet", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": null, "ean": null, "prixUnitaire": 0.75, "pvc": null, "badge": "NEW", "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null, "enStock": true},
+    {"ref": "JO095", "designation": "Pelle + balayette", "marque": "Jardin d'Orient", "rayon": "menage", "sousCategorie": "Brosserie", "piecesColis": 24, "piecesPalette": 912, "ean": "3701571445562", "prixUnitaire": null, "pvc": null, "badge": "BEST", "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null, "enStock": true},
+    {"ref": "JO094", "designation": "Pinces à linge x12", "marque": "Jardin d'Orient", "rayon": "maison", "sousCategorie": "Linge", "piecesColis": 48, "piecesPalette": 2400, "ean": "3701571445555", "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null, "enStock": true},
+    {"ref": "JO098", "designation": "Chiffons microfibre x2", "marque": "Jardin d'Orient", "rayon": "menage", "sousCategorie": "Microfibre", "piecesColis": 48, "piecesPalette": 4224, "ean": "3701571445593", "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": true, "prixCamion": null, "enStock": true},
+    {"ref": "JO077", "designation": "Set 3 brosses", "marque": "Jardin d'Orient", "rayon": "menage", "sousCategorie": "Brosserie", "piecesColis": 24, "piecesPalette": 1200, "ean": "3701571445388", "prixUnitaire": null, "pvc": null, "badge": "NEW", "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null, "enStock": true},
+    {"ref": "MG073", "designation": "Lingettes nettoyantes x50", "marque": "Les Secrets de Mamie Georgette", "rayon": "menage", "sousCategorie": "Vinaigres & nettoyants", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null, "enStock": true},
+    {"ref": "JO013", "designation": "Parfum de linge", "marque": "Jardin d'Orient", "rayon": "maison", "sousCategorie": "Parfums de linge", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null, "enStock": true},
+    {"ref": "JCB015", "designation": "Masque cheveux Pro Couleur", "marque": "Biguine Paris", "rayon": "beaute", "sousCategorie": "Soins cheveux", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null, "enStock": true},
+    {"ref": "JCB031", "designation": "Accessoire cheveux", "marque": "Biguine Paris", "rayon": "beaute", "sousCategorie": "Accessoires cheveux", "piecesColis": null, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": true, "eligibleCamion": false, "prixCamion": null, "enStock": true},
+    {"ref": "FOB-EX-01", "designation": "Seau ménage 10 L avec essoreur", "marque": "Exemple FOB", "rayon": "menage", "sousCategorie": "Seaux & gants", "piecesColis": 12, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": false, "eligibleCamion": false, "prixCamion": null, "enStock": false, "exemple": true, "photo": false, "fob": {"port": "ningbo", "prixFob": 1.35, "volumeCarton": 0.11}},
+    {"ref": "FOB-EX-02", "designation": "Balai brosse coco 30 cm", "marque": "Exemple FOB", "rayon": "menage", "sousCategorie": "Brosserie", "piecesColis": 24, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": false, "eligibleCamion": false, "prixCamion": null, "enStock": false, "exemple": true, "photo": false, "fob": {"port": "ningbo", "prixFob": 0.62, "volumeCarton": 0.065}},
+    {"ref": "FOB-EX-03", "designation": "Gants ménage latex (paire)", "marque": "Exemple FOB", "rayon": "menage", "sousCategorie": "Seaux & gants", "piecesColis": 240, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": false, "eligibleCamion": false, "prixCamion": null, "enStock": false, "exemple": true, "photo": false, "fob": {"port": "ningbo", "prixFob": 0.14, "volumeCarton": 0.045}},
+    {"ref": "FOB-EX-04", "designation": "Boîtes alimentaires x3", "marque": "Exemple FOB", "rayon": "cuisine", "sousCategorie": "Conservation", "piecesColis": 36, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": false, "eligibleCamion": false, "prixCamion": null, "enStock": false, "exemple": true, "photo": false, "fob": {"port": "shanghai", "prixFob": 0.88, "volumeCarton": 0.072}},
+    {"ref": "FOB-EX-05", "designation": "Bac de rangement 30 L", "marque": "Exemple FOB", "rayon": "maison", "sousCategorie": "Rangement", "piecesColis": 10, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": false, "eligibleCamion": false, "prixCamion": null, "enStock": false, "exemple": true, "photo": false, "fob": {"port": "shanghai", "prixFob": 1.95, "volumeCarton": 0.135}},
+    {"ref": "FOB-EX-06", "designation": "Lot 6 verres 25 cl", "marque": "Exemple FOB", "rayon": "cuisine", "sousCategorie": "Verres & vaisselle", "piecesColis": 8, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": false, "eligibleCamion": false, "prixCamion": null, "enStock": false, "exemple": true, "photo": false, "fob": {"port": "shanghai", "prixFob": 1.1, "volumeCarton": 0.05}},
+    {"ref": "FOB-EX-07", "designation": "Torchons coton x3", "marque": "Exemple FOB", "rayon": "textile", "sousCategorie": "Linge de maison", "piecesColis": 60, "piecesPalette": null, "ean": null, "prixUnitaire": null, "pvc": null, "badge": null, "paletteDisponible": false, "eligibleCamion": false, "prixCamion": null, "enStock": false, "exemple": true, "photo": false, "fob": {"port": "ningbo", "prixFob": 0.95, "volumeCarton": 0.06}}
   ]
 }
